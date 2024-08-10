@@ -29,6 +29,7 @@
 		BFFA24AB2C67D766007F919E /* AudioTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFA24AA2C67D766007F919E /* AudioTrack.swift */; };
 		BFFA24AD2C67D76E007F919E /* Artist.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFA24AC2C67D76E007F919E /* Artist.swift */; };
 		BFFA24AF2C67D777007F919E /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFA24AE2C67D777007F919E /* UserProfile.swift */; };
+		BFFA24B12C67E082007F919E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFA24B02C67E082007F919E /* Extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,6 +57,7 @@
 		BFFA24AA2C67D766007F919E /* AudioTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioTrack.swift; sourceTree = "<group>"; };
 		BFFA24AC2C67D76E007F919E /* Artist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Artist.swift; sourceTree = "<group>"; };
 		BFFA24AE2C67D777007F919E /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
+		BFFA24B02C67E082007F919E /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -150,6 +152,7 @@
 				BFFA246F2C67CDE9007F919E /* AppDelegate.swift */,
 				BFFA24712C67CDE9007F919E /* SceneDelegate.swift */,
 				BFFA24782C67CDEA007F919E /* Assets.xcassets */,
+				BFFA24B02C67E082007F919E /* Extensions.swift */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -262,6 +265,7 @@
 				BFFA24952C67D693007F919E /* AuthViewController.swift in Sources */,
 				BFFA24702C67CDE9007F919E /* AppDelegate.swift in Sources */,
 				BFFA24AF2C67D777007F919E /* UserProfile.swift in Sources */,
+				BFFA24B12C67E082007F919E /* Extensions.swift in Sources */,
 				BFFA24912C67D656007F919E /* LibraryViewController.swift in Sources */,
 				BFFA24AD2C67D76E007F919E /* Artist.swift in Sources */,
 				BFFA249F2C67D6CE007F919E /* PlaylistViewController.swift in Sources */,
