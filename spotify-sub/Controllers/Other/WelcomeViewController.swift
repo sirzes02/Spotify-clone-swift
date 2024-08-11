@@ -43,7 +43,7 @@ class WelcomeViewController: UIViewController {
         let vc = AuthViewController()
         vc.completionHandler = { [weak self] success in
             DispatchQueue.main.async {
-                self?.handleSignIn(succces: success)
+                self?.handleSignIn(success: success)
             }
         }
         vc.navigationItem.largeTitleDisplayMode = .never
@@ -51,7 +51,17 @@ class WelcomeViewController: UIViewController {
         navigationController?.pushViewController(vc, animated: true)
     }
     
-    private func handleSignIn(succces: Bool) {
+    private func handleSignIn(success: Bool) {
         // Log user in or yell at them for error
+        guard success else {
+            let alert = UIAlertController(title: "Oops", message: "Something went wrong when signing in.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "Dismiss", style: .cancel))
+            present(alert, animated: true)
+            return
+        }
+        
+        let mainAppTabVC = TabBarViewController()
+        mainAppTabVC.modalPresentationStyle = .fullScreen
+        present(mainAppTabVC, animated: true)
     }
 }

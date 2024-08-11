@@ -30,6 +30,7 @@
 		BFFA24AD2C67D76E007F919E /* Artist.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFA24AC2C67D76E007F919E /* Artist.swift */; };
 		BFFA24AF2C67D777007F919E /* UserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFA24AE2C67D777007F919E /* UserProfile.swift */; };
 		BFFA24B12C67E082007F919E /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFA24B02C67E082007F919E /* Extensions.swift */; };
+		BFFA24B32C6839FE007F919E /* AuthResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFFA24B22C6839FE007F919E /* AuthResponse.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -58,6 +59,7 @@
 		BFFA24AC2C67D76E007F919E /* Artist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Artist.swift; sourceTree = "<group>"; };
 		BFFA24AE2C67D777007F919E /* UserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfile.swift; sourceTree = "<group>"; };
 		BFFA24B02C67E082007F919E /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		BFFA24B22C6839FE007F919E /* AuthResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthResponse.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +127,7 @@
 				BFFA24AA2C67D766007F919E /* AudioTrack.swift */,
 				BFFA24AC2C67D76E007F919E /* Artist.swift */,
 				BFFA24AE2C67D777007F919E /* UserProfile.swift */,
+				BFFA24B22C6839FE007F919E /* AuthResponse.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -260,6 +263,7 @@
 				BFFA249B2C67D6B4007F919E /* ProfileViewController.swift in Sources */,
 				BFFA248C2C67D634007F919E /* TabBarViewController.swift in Sources */,
 				BFFA24A72C67D740007F919E /* HapticsManager.swift in Sources */,
+				BFFA24B32C6839FE007F919E /* AuthResponse.swift in Sources */,
 				BFFA24AB2C67D766007F919E /* AudioTrack.swift in Sources */,
 				BFFA24742C67CDE9007F919E /* HomeViewController.swift in Sources */,
 				BFFA24952C67D693007F919E /* AuthViewController.swift in Sources */,
