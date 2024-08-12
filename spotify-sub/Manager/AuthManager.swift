@@ -10,7 +10,9 @@ import Foundation
 final class AuthManager {
     static let shared = AuthManager()
     
-    struct Constans {
+    private var refreshingToken = false
+    
+    struct Constants {
         static let clientID = "80f0d294116146f39c48bfb6a8fb8dea"
         static let clientSecret = "3c1d640da06a4f3ca437c6752be471b0"
         static let tokenAPIURL = "https://accounts.spotify.com/api/token"
@@ -33,7 +35,7 @@ final class AuthManager {
     
     public var signInURL: URL? {
         let base = "https://accounts.spotify.com/authorize"
-        let string = "\(base)?response_type=code&client_id=\(Constans.clientID)&scope=\(Constans.scopes)&redirect_uri=\(Constans.redirectURI)&state=12&show_dialog=TRUE"
+        let string = "\(base)?response_type=code&client_id=\(Constants.clientID)&scope=\(Constants.scopes)&redirect_uri=\(Constants.redirectURI)&state=12&show_dialog=TRUE"
         
         return URL(string: string )
     }
@@ -67,7 +69,7 @@ final class AuthManager {
     
     public func exchangeCodeForToken(code: String, completion: @escaping((Bool) -> Void)) {
         // Get Token
-        guard let url = URL(string: Constans.tokenAPIURL) else {
+        guard let url = URL(string: Constants.tokenAPIURL) else {
             return
         }
         
@@ -75,7 +77,7 @@ final class AuthManager {
         components.queryItems = [
             URLQueryItem(name: "grant_type", value: "authorization_code"),
             URLQueryItem(name: "code", value: code),
-            URLQueryItem(name: "redirect_uri", value: Constans.redirectURI)
+            URLQueryItem(name: "redirect_uri", value: Constants.redirectURI)
         ]
         
         var request = URLRequest(url: url)
@@ -83,7 +85,7 @@ final class AuthManager {
         request.setValue("application/x-www-form-urlencoded ", forHTTPHeaderField: "Content-Type")
         request.httpBody = components.query?.data(using: .utf8)
         
-        let basicToken = Constans.clientID + ":" + Constans.clientSecret
+        let basicToken = Constants.clientID + ":" + Constants.clientSecret
         let data = basicToken.data(using: .utf8)
         guard let base64String = data?.base64EncodedString() else {
             print("Failure to get base64")
@@ -111,22 +113,47 @@ final class AuthManager {
         task.resume()
     }
     
+    private var onRefreshBlocks = [((String) -> Void)]()
+    
+    /// Supplies valid token to be used with API calls
+    public func withValidToken(completion: @escaping (String) -> Void) {
+        guard !refreshingToken else {
+            // append the completion
+            onRefreshBlocks.append(completion)
+            return
+        }
+        
+        if shouldRefreshToken {
+            refreshIfNeeded { [weak self] success in
+                if let token = self?.accessToken, success {
+                    completion(token)
+                }
+            }
+        } else if let token = accessToken {
+            completion(token)
+        }
+    }
+    
     public func refreshIfNeeded(completion: @escaping (Bool) -> Void) {
-        /*
-         guard shouldRefreshToken else {
-         completion(true)
-         return
-         }
-         */
+        guard !refreshingToken else {
+            return
+        }
+        
+        guard shouldRefreshToken else {
+            completion(true)
+            return
+        }
         
         guard let refreshToken = self.refreshToken else {
             return
         }
         
         // Refresh the token
-        guard let url = URL(string: Constans.tokenAPIURL) else {
+        guard let url = URL(string: Constants.tokenAPIURL) else {
             return
         }
+        
+        refreshingToken = true
         
         var components = URLComponents()
         components.queryItems = [
@@ -139,7 +166,7 @@ final class AuthManager {
         request.setValue("application/x-www-form-urlencoded ", forHTTPHeaderField: "Content-Type")
         request.httpBody = components.query?.data(using: .utf8)
         
-        let basicToken = Constans.clientID + ":" + Constans.clientSecret
+        let basicToken = Constants.clientID + ":" + Constants.clientSecret
         let data = basicToken.data(using: .utf8)
         guard let base64String = data?.base64EncodedString() else {
             print("Failure to get base64")
@@ -150,6 +177,8 @@ final class AuthManager {
         request.setValue("Basic \(base64String)", forHTTPHeaderField: "Authorization")
         
         let task = URLSession.shared.dataTask(with: request) { data, _, error in
+            self.refreshingToken = false
+            
             guard let data = data, error == nil else {
                 completion(false)
                 return
@@ -157,6 +186,8 @@ final class AuthManager {
             
             do {
                 let result = try JSONDecoder().decode(AuthResponse.self, from: data)
+                self.onRefreshBlocks.forEach { $0(result.access_token) }
+                self.onRefreshBlocks.removeAll()
                 self.cacheToken(result: result)
                 completion(true)
             } catch {
