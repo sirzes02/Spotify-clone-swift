@@ -9,8 +9,8 @@ import UIKit
 
 enum BrowseSectionType {
     case newReleases(viewModels: [NewReleasesCellViewModel])
-    case featuredPlaylists(viewModels: [NewReleasesCellViewModel])
-    case recommendedTracks(viewModels: [NewReleasesCellViewModel])
+    case featuredPlaylists(viewModels: [FeaturedPlaylistCellViewModel])
+    case recommendedTracks(viewModels: [RecommendedTrackCellViewModel])
 }
 
 class HomeViewController: UIViewController {
@@ -146,12 +146,20 @@ class HomeViewController: UIViewController {
     private func configureModels(newAlbums: [Album], playlist: [Playlist], tracks: [AudioTrack]) {
         sections.append(.newReleases(viewModels: newAlbums.compactMap({
             NewReleasesCellViewModel(name: $0.name,
-                                     artwortkURL: URL(string: $0.images.first?.url ?? ""),
+                                     artworkURL: URL(string: $0.images.first?.url ?? ""),
                                      numberOfTracks: $0.total_tracks,
                                      artistName: $0.artists.first?.name ?? "-")
         })))
-        sections.append(.featuredPlaylists(viewModels: []))
-        sections.append(.recommendedTracks(viewModels: []))
+        sections.append(.featuredPlaylists(viewModels: playlist.compactMap {
+            FeaturedPlaylistCellViewModel(name: $0.name,
+                                          artworkURL: URL(string: $0.images.first?.url ?? ""),
+                                          creatorName: $0.owner.display_name)
+        }))
+        sections.append(.recommendedTracks(viewModels: tracks.compactMap {
+            RecommendedTrackCellViewModel(name: $0.name,
+                                          artistName: $0.artists.first?.name ?? "-",
+                                          artworkURL: URL(string: $0.album.images.first?.url ?? ""))
+        }))
         collectionView.reloadData()
     }
     
@@ -204,7 +212,9 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             ) as? FeaturedPlaylistsCollectionViewCell else {
                 return UICollectionViewCell()
             }
-            cell.backgroundColor = .systemBlue
+            
+            let viewModel = viewModels[indexPath.row]
+            cell.configure(with: viewModel)
             
             return cell
         case .recommendedTracks(let viewModels):
@@ -214,7 +224,9 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             ) as? RecommendedTrackCollectionViewCell else {
                 return UICollectionViewCell()
             }
-            cell.backgroundColor = .systemOrange
+            
+            let viewModel = viewModels[indexPath.row]
+            cell.configure(with: viewModel)
             
             return cell
         }

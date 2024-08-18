@@ -45,13 +45,13 @@ class NewReleaseCollectionViewCell: UICollectionViewCell {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        contentView.backgroundColor = .secondarySystemBackground
-        contentView.addSubview(albumCoverImageView)
-        contentView.addSubview(albumNameLabel)
-        contentView.addSubview(numberOfTracksLabel)
-        contentView.addSubview(artistNameLabel)
+        backgroundColor = .secondarySystemBackground
+        addSubview(albumCoverImageView)
+        addSubview(albumNameLabel)
+        addSubview(numberOfTracksLabel)
+        addSubview(artistNameLabel)
         
-        contentView.clipsToBounds = true
+        clipsToBounds = true
     }
     
     required init?(coder: NSCoder) {
@@ -104,6 +104,6 @@ class NewReleaseCollectionViewCell: UICollectionViewCell {
         albumNameLabel.text = viewModel.name
         artistNameLabel.text = viewModel.artistName
         numberOfTracksLabel.text = "Tracks: \(viewModel.numberOfTracks)"
-        albumCoverImageView.sd_setImage(with: viewModel.artwortkURL)
+        albumCoverImageView.sd_setImage(with: viewModel.artworkURL)
     }
 }
