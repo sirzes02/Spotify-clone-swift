@@ -11,6 +11,17 @@ enum BrowseSectionType {
     case newReleases(viewModels: [NewReleasesCellViewModel])
     case featuredPlaylists(viewModels: [FeaturedPlaylistCellViewModel])
     case recommendedTracks(viewModels: [RecommendedTrackCellViewModel])
+    
+    var title: String {
+        switch self {
+        case .newReleases(let viewModels):
+            return "New Released Albums"
+        case .featuredPlaylists(let viewModels):
+            return "Featured Playlists"
+        case .recommendedTracks(let viewModels):
+            return "Reccommended"
+        }
+    }
 }
 
 class HomeViewController: UIViewController {
@@ -57,10 +68,21 @@ class HomeViewController: UIViewController {
     
     private func configureCollectionView() {
         view.addSubview(collectionView)
-        collectionView.register(UICollectionViewCell.self, forCellWithReuseIdentifier: "cell")
-        collectionView.register(NewReleaseCollectionViewCell.self, forCellWithReuseIdentifier: NewReleaseCollectionViewCell.identifier)
-        collectionView.register(FeaturedPlaylistsCollectionViewCell.self, forCellWithReuseIdentifier: FeaturedPlaylistsCollectionViewCell.identifier)
-        collectionView.register(RecommendedTrackCollectionViewCell.self, forCellWithReuseIdentifier: RecommendedTrackCollectionViewCell.identifier)
+        collectionView.register(
+            UICollectionViewCell.self,
+            forCellWithReuseIdentifier: "cell")
+        collectionView.register(
+            NewReleaseCollectionViewCell.self,
+            forCellWithReuseIdentifier: NewReleaseCollectionViewCell.identifier)
+        collectionView.register(
+            FeaturedPlaylistsCollectionViewCell.self,
+            forCellWithReuseIdentifier: FeaturedPlaylistsCollectionViewCell.identifier)
+        collectionView.register(
+            RecommendedTrackCollectionViewCell.self,
+            forCellWithReuseIdentifier: RecommendedTrackCollectionViewCell.identifier)
+        collectionView.register(TitleHeaderCollectionReusableView.self,
+                                forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
+                                withReuseIdentifier: TitleHeaderCollectionReusableView.identifier)
         collectionView.dataSource = self
         collectionView.delegate = self
         collectionView.backgroundColor = .systemBackground
@@ -262,7 +284,33 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
         }
     }
     
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        guard let header = collectionView.dequeueReusableSupplementaryView(
+            ofKind: kind,
+            withReuseIdentifier: TitleHeaderCollectionReusableView.identifier,
+            for: indexPath
+        ) as? TitleHeaderCollectionReusableView, kind == UICollectionView.elementKindSectionHeader else {
+            return UICollectionReusableView()
+        }
+        let section = indexPath.section
+        let title = sections[section].title
+        header.configure(with: title)
+        
+        return header
+    }
+    
     static func creationSectionLayout(sectionIndex: Int) -> NSCollectionLayoutSection {
+        let supplementaryViews = [
+            NSCollectionLayoutBoundarySupplementaryItem(
+                layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1),
+                    heightDimension: .absolute(50)
+                ),
+                elementKind: UICollectionView.elementKindSectionHeader,
+                alignment: .top
+            )
+        ]
+        
         // Common item configuration
         func createItem(width: NSCollectionLayoutDimension, height: NSCollectionLayoutDimension, contentInsets: NSDirectionalEdgeInsets) -> NSCollectionLayoutItem {
             let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(widthDimension: width, heightDimension: height))
@@ -295,23 +343,26 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             let horizontalGroup = createHorizontalGroup(width: .fractionalWidth(0.9), height: .absolute(390), subitem: verticalGroup, count: 1)
             section = NSCollectionLayoutSection(group: horizontalGroup)
             section.orthogonalScrollingBehavior = .groupPaging
-            
+            section.boundarySupplementaryItems = supplementaryViews
         case 1:
             let item = createItem(width: .absolute(200), height: .absolute(200), contentInsets: NSDirectionalEdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2))
             let verticalGroup = createVerticalGroup(width: .absolute(200), height: .absolute(400), subitem: item, count: 2)
             let horizontalGroup = createHorizontalGroup(width: .absolute(200), height: .absolute(400), subitem: verticalGroup, count: 1)
             section = NSCollectionLayoutSection(group: horizontalGroup)
             section.orthogonalScrollingBehavior = .groupPaging
-            
+            section.boundarySupplementaryItems = supplementaryViews
+
         case 2:
             let item = createItem(width: .fractionalWidth(1.0), height: .fractionalWidth(1.0), contentInsets: NSDirectionalEdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2))
             let group = createVerticalGroup(width: .fractionalWidth(1.0), height: .absolute(80), subitem: item, count: 1)
             section = NSCollectionLayoutSection(group: group)
-            
+            section.boundarySupplementaryItems = supplementaryViews
+
         default:
             let item = createItem(width: .fractionalWidth(1.0), height: .fractionalHeight(1.0), contentInsets: NSDirectionalEdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2))
             let group = createVerticalGroup(width: .fractionalWidth(1.0), height: .absolute(390), subitem: item, count: 1)
             section = NSCollectionLayoutSection(group: group)
+            section.boundarySupplementaryItems = supplementaryViews
         }
         
         return section
