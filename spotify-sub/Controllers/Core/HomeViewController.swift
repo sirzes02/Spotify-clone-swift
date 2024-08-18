@@ -14,11 +14,11 @@ enum BrowseSectionType {
     
     var title: String {
         switch self {
-        case .newReleases(let viewModels):
+        case .newReleases:
             return "New Released Albums"
-        case .featuredPlaylists(let viewModels):
+        case .featuredPlaylists:
             return "Featured Playlists"
-        case .recommendedTracks(let viewModels):
+        case .recommendedTracks:
             return "Reccommended"
         }
     }
