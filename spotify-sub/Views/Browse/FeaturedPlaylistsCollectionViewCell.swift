@@ -60,15 +60,15 @@ class FeaturedPlaylistsCollectionViewCell: UICollectionViewCell {
                                         height: 30)
         
         playlistNameLabel.frame = CGRect(x: 3,
-                                        y: contentView.height - 60,
-                                        width: contentView.width - 6,
-                                        height: 30)
+                                         y: contentView.height - 60,
+                                         width: contentView.width - 6,
+                                         height: 30)
         
         let imageSize = contentView.height - 70
         playlistCoverImageView.frame = CGRect(x: (contentView.width - imageSize) / 2,
-                                        y: 3,
-                                        width: imageSize,
-                                        height: imageSize)
+                                              y: 3,
+                                              width: imageSize,
+                                              height: imageSize)
     }
     
     override func prepareForReuse() {

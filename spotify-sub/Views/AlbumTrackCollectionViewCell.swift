@@ -42,7 +42,7 @@ class AlbumTrackCollectionViewCell: UICollectionViewCell {
     
     override func layoutSubviews() {
         super.layoutSubviews()
-
+        
         trackNameLabel.frame = CGRect(x: 10,
                                       y: 0,
                                       width: contentView.width - 15,

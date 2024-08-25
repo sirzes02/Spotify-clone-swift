@@ -172,7 +172,7 @@ class HomeViewController: UIViewController {
         self.newAlbums = newAlbums
         self.playlist = playlists
         self.tracks = tracks
-
+        
         sections.append(.newReleases(viewModels: newAlbums.compactMap({
             NewReleasesCellViewModel(name: $0.name,
                                      artworkURL: URL(string: $0.images.first?.url ?? ""),
@@ -352,13 +352,13 @@ extension HomeViewController: UICollectionViewDelegate, UICollectionViewDataSour
             section = NSCollectionLayoutSection(group: horizontalGroup)
             section.orthogonalScrollingBehavior = .groupPaging
             section.boundarySupplementaryItems = supplementaryViews
-
+            
         case 2:
             let item = createItem(width: .fractionalWidth(1.0), height: .fractionalWidth(1.0), contentInsets: NSDirectionalEdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2))
             let group = createVerticalGroup(width: .fractionalWidth(1.0), height: .absolute(80), subitem: item, count: 1)
             section = NSCollectionLayoutSection(group: group)
             section.boundarySupplementaryItems = supplementaryViews
-
+            
         default:
             let item = createItem(width: .fractionalWidth(1.0), height: .fractionalHeight(1.0), contentInsets: NSDirectionalEdgeInsets(top: 2, leading: 2, bottom: 2, trailing: 2))
             let group = createVerticalGroup(width: .fractionalWidth(1.0), height: .absolute(390), subitem: item, count: 1)

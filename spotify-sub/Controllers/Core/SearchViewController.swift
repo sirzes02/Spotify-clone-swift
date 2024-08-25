@@ -124,7 +124,7 @@ extension SearchViewController: UISearchBarDelegate {
         }
         
         resultsController.delegate = self
-
+        
         APICaller.shared.search(with: query) { result in
             DispatchQueue.main.sync {
                 switch result {

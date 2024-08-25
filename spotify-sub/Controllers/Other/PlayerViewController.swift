@@ -27,10 +27,10 @@ class PlayerViewController: UIViewController {
     }()
     
     private let controlsView = PlayerControlsView()
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         view.backgroundColor = .systemBackground
         view.addSubview(imageView)
         view.addSubview(controlsView)
@@ -62,8 +62,8 @@ class PlayerViewController: UIViewController {
                                                            target: self,
                                                            action: #selector(didTapClose))
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .action,
-                                                           target: self,
-                                                           action: #selector(didTapAction))
+                                                            target: self,
+                                                            action: #selector(didTapAction))
     }
     
     @objc private func didTapClose() {

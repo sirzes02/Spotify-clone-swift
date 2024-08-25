@@ -75,13 +75,13 @@ final class PlaybackPresenter {
         let vc = PlayerViewController()
         vc.dataSource = self
         vc.delegate = self
-
+        
         viewController.present(UINavigationController(rootViewController: vc), animated: true)  { [weak self] in
             self?.playerQueue?.play()
         }
         
         self.playerVC = vc
-
+        
     }
 }
 
@@ -107,7 +107,7 @@ extension PlaybackPresenter: PlayerViewControllerDelegate {
             player?.pause()
         } else if let player = playerQueue {
             player.advanceToNextItem()
-            index += 1 
+            index += 1
             playerVC?.refreshUI()
         }
     }
@@ -126,7 +126,7 @@ extension PlaybackPresenter: PlayerViewControllerDelegate {
     }
     
     func didSlideSlider(_ value: Float) {
-        player?.volume = value 
+        player?.volume = value
     }
 }
 

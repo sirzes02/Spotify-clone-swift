@@ -42,7 +42,7 @@ final class APICaller {
             task.resume()
         }
     }
-
+    
     // MARK: - Playlists
     
     public func getPlaylistDetails(for playlist: Playlist, completion: @escaping (Result<PlaylistDetailsResponse, Error>) -> Void) {
@@ -63,7 +63,7 @@ final class APICaller {
             task.resume()
         }
     }
-
+    
     // MARK: - Profile
     
     public func getCurrentUserProfile(completion: @escaping (Result<UserProfile, Error>) -> Void) {

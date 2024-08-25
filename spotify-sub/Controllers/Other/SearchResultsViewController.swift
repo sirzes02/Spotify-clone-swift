@@ -36,7 +36,7 @@ class SearchResultsViewController: UIViewController, UITableViewDelegate, UITabl
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        
         view.backgroundColor = .clear
         view.addSubview(tableView)
         tableView.delegate = self
@@ -53,7 +53,7 @@ class SearchResultsViewController: UIViewController, UITableViewDelegate, UITabl
         var artists: [SearchResult] = []
         var playlists: [SearchResult] = []
         var albums: [SearchResult] = []
-
+        
         for result in results {
             switch result {
             case .track:
@@ -77,7 +77,7 @@ class SearchResultsViewController: UIViewController, UITableViewDelegate, UITabl
         tableView.reloadData()
         tableView.isHidden = results.isEmpty
     }
-
+    
     
     func numberOfSections(in tableView: UITableView) -> Int {
         sections.count
