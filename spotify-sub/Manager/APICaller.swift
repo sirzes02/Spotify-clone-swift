@@ -43,6 +43,44 @@ final class APICaller {
         }
     }
     
+    public func getCurrentUserAlbums(completion: @escaping (Result<[Album], Error>) -> Void) {
+        createRequest(with: URL(string: Constants.baseAPIURL + "/me/albums"), type: .GET) { baseRequest in
+            let task = URLSession.shared.dataTask(with: baseRequest) { data, _, error in
+                guard let data = data, error == nil else {
+                    completion(.failure(APIError.failedToGetData))
+                    return
+                }
+                
+                do {
+                    let result = try JSONDecoder().decode(LibraryAlbumsResponse.self, from: data)
+                    completion(.success(result.items.compactMap({ $0.album })))
+                } catch {
+                    completion(.failure(error))
+                }
+            }
+            task.resume()
+        }
+    }
+    
+    public func saveAlbum(album: Album, completion: @escaping (Bool) -> Void) {
+        createRequest(with: URL(string: Constants.baseAPIURL + "/me/albums?ids=\(album.id)"), type: .PUT) { baseRequest in
+            var request = baseRequest
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                guard let code = (response as? HTTPURLResponse)?.statusCode,
+                      error == nil else {
+                    completion(false)
+                    return
+                }
+                
+                
+                completion(code == 200)
+            }
+            task.resume()
+        }
+    }
+    
     // MARK: - Playlists
     
     public func getPlaylistDetails(for playlist: Playlist, completion: @escaping (Result<PlaylistDetailsResponse, Error>) -> Void) {
@@ -65,7 +103,7 @@ final class APICaller {
     }
     
     public func getCurrentUserPlaylists(completion: @escaping (Result<[Playlist], Error>) -> Void) {
-        createRequest(with: URL(string: Constants.baseAPIURL + "/me/playlists/?limit=50"), type: .GET) { baseRequest in
+        createRequest(with: URL(string: Constants.baseAPIURL + "/me/playlists"), type: .GET) { baseRequest in
             let task = URLSession.shared.dataTask(with: baseRequest) { data, _, error in
                 guard let data = data, error == nil else {
                     completion(.failure(APIError.failedToGetData))
@@ -143,7 +181,7 @@ final class APICaller {
                 do {
                     let result = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
                     
-                    if let response = result as? [String: Any], 
+                    if let response = result as? [String: Any],
                         response["snapshot_id"] as? String != nil {
                         completion(true)
                     } else {
@@ -182,7 +220,7 @@ final class APICaller {
                     
                     print(result)
                     if let response = result as? [String: Any],
-                        response["snapshot_id"] as? String != nil {
+                       response["snapshot_id"] as? String != nil {
                         completion(true)
                     } else {
                         completion(false)
@@ -372,6 +410,7 @@ final class APICaller {
         case GET
         case POST
         case DELETE
+        case PUT
     }
     
     private func createRequest(with url: URL?, type: HTTPMethod, completion: @escaping (URLRequest) -> Void) {
