@@ -9,7 +9,7 @@ import UIKit
 
 class AlbumViewController: UIViewController {
     private let album: Album
-    
+
     private let collectionView = UICollectionView(
         frame: .zero,
         collectionViewLayout: UICollectionViewCompositionalLayout(
@@ -17,64 +17,73 @@ class AlbumViewController: UIViewController {
                 let item = NSCollectionLayoutItem(
                     layoutSize: NSCollectionLayoutSize(
                         widthDimension: .fractionalWidth(1.0),
-                        heightDimension: .fractionalHeight(1.0)))
-                
+                        heightDimension: .fractionalHeight(1.0)
+                    ))
+
                 item.contentInsets = NSDirectionalEdgeInsets(top: 1, leading: 2, bottom: 1, trailing: 2)
-                
+
                 let group = NSCollectionLayoutGroup.vertical(
                     layoutSize: NSCollectionLayoutSize(
                         widthDimension: .fractionalWidth(1),
-                        heightDimension: .absolute(60)),
+                        heightDimension: .absolute(60)
+                    ),
                     subitem: item,
-                    count: 1)
-                
+                    count: 1
+                )
+
                 let section = NSCollectionLayoutSection(group: group)
                 section.boundarySupplementaryItems = [
                     NSCollectionLayoutBoundarySupplementaryItem(
                         layoutSize: NSCollectionLayoutSize(
                             widthDimension: .fractionalWidth(1),
-                            heightDimension: .fractionalWidth(1)),
+                            heightDimension: .fractionalWidth(1)
+                        ),
                         elementKind: UICollectionView.elementKindSectionHeader,
-                        alignment: .top)
+                        alignment: .top
+                    ),
                 ]
-                
+
                 return section
-            }))
-    
+            })
+    )
+
     private var viewModels = [AlbumCollectionViewCellViewModel]()
     private var tracks = [AudioTrack]()
-    
+
     init(album: Album) {
         self.album = album
         super.init(nibName: nil, bundle: nil)
     }
-    
-    required init?(coder: NSCoder) {
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
         fatalError()
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         title = album.name
         view.backgroundColor = .systemBackground
-        
+
         view.addSubview(collectionView)
         collectionView.register(
             AlbumTrackCollectionViewCell.self,
-            forCellWithReuseIdentifier: AlbumTrackCollectionViewCell.identifier)
+            forCellWithReuseIdentifier: AlbumTrackCollectionViewCell.identifier
+        )
         collectionView.register(
             PlaylistHeaderCollectionReusableView.self,
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
-            withReuseIdentifier: PlaylistHeaderCollectionReusableView.identifier)
+            withReuseIdentifier: PlaylistHeaderCollectionReusableView.identifier
+        )
         collectionView.backgroundColor = .systemBackground
         collectionView.delegate = self
         collectionView.dataSource = self
-        
+
         fetchData()
-        
+
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .action, target: self, action: #selector(didTapActions))
     }
-    
+
     @objc func didTapActions() {
         let actionSheet = UIAlertController(title: album.name, message: "Actions", preferredStyle: .actionSheet)
         actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
@@ -82,7 +91,7 @@ class AlbumViewController: UIViewController {
             guard let strongSelf = self else {
                 return
             }
-            
+
             APICaller.shared.saveAlbum(album: strongSelf.album) { success in
                 if success {
                     HapticsManager.shared.vibrate(for: .success)
@@ -92,29 +101,30 @@ class AlbumViewController: UIViewController {
                 }
             }
         })
-        
+
         present(actionSheet, animated: true)
     }
-    
+
     func fetchData() {
         APICaller.shared.getAlbumDetails(for: album) { [weak self] result in
             DispatchQueue.main.sync {
                 switch result {
-                case .success(let model):
+                case let .success(model):
                     self?.tracks = model.tracks.items
                     self?.viewModels = model.tracks.items.compactMap {
                         AlbumCollectionViewCellViewModel(
                             name: $0.name,
-                            artistName: $0.artists.first?.name ?? "-")
+                            artistName: $0.artists.first?.name ?? "-"
+                        )
                     }
                     self?.collectionView.reloadData()
-                case .failure(let error):
+                case let .failure(error):
                     print(error.localizedDescription)
                 }
             }
         }
     }
-    
+
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         collectionView.frame = view.bounds
@@ -122,14 +132,14 @@ class AlbumViewController: UIViewController {
 }
 
 extension AlbumViewController: UICollectionViewDelegate, UICollectionViewDataSource {
-    func numberOfSections(in collectionView: UICollectionView) -> Int {
+    func numberOfSections(in _: UICollectionView) -> Int {
         1
     }
-    
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+
+    func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
         viewModels.count
     }
-    
+
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         guard let cell = collectionView.dequeueReusableCell(
             withReuseIdentifier: AlbumTrackCollectionViewCell.identifier,
@@ -137,48 +147,51 @@ extension AlbumViewController: UICollectionViewDelegate, UICollectionViewDataSou
         ) as? AlbumTrackCollectionViewCell else {
             return UICollectionViewCell()
         }
-        
+
         cell.configure(with: viewModels[indexPath.row])
-        
+
         return cell
     }
-    
+
     func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
         guard let header = collectionView.dequeueReusableSupplementaryView(
             ofKind: kind,
             withReuseIdentifier: PlaylistHeaderCollectionReusableView.identifier,
             for: indexPath
         ) as? PlaylistHeaderCollectionReusableView,
-              kind == UICollectionView.elementKindSectionHeader else {
+            kind == UICollectionView.elementKindSectionHeader
+        else {
             return UICollectionReusableView()
         }
-        
-        let headerViewModel = PlaylistHeaderViewViewModel(name: album.name,
-                                                          ownerName: album.artists.first?.name,
-                                                          description: "Release Date: \(String.formattedDate(string: album.release_date))",
-                                                          artworkURL: URL(string: album.images.first?.url ?? ""))
+
+        let headerViewModel = PlaylistHeaderViewViewModel(
+            name: album.name,
+            ownerName: album.artists.first?.name,
+            description: "Release Date: \(String.formattedDate(string: album.release_date))",
+            artworkURL: URL(string: album.images.first?.url ?? "")
+        )
         header.configure(with: headerViewModel)
         header.delegate = self
-        
+
         return header
     }
-    
+
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
         var track = tracks[indexPath.row]
-        track.album = self.album
+        track.album = album
         PlaybackPresenter.shared.startPlayback(from: self, track: track)
     }
 }
 
 extension AlbumViewController: PlaylistHeaderCollectionReusableViewDelegate {
-    func playlistHeaderCollectionReusableViewDidTapAll(_ header: PlaylistHeaderCollectionReusableView) {
-        let tracksWithAlbum: [AudioTrack] = tracks.compactMap({
+    func playlistHeaderCollectionReusableViewDidTapAll(_: PlaylistHeaderCollectionReusableView) {
+        let tracksWithAlbum: [AudioTrack] = tracks.compactMap {
             var track = $0
             track.album = self.album
-            
+
             return track
-        })
+        }
         PlaybackPresenter.shared.startPlayback(from: self, tracks: tracksWithAlbum)
     }
 }

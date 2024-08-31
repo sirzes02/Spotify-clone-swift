@@ -1,5 +1,5 @@
 //
-//  RecommendTrackCellViewModel.swift
+//  RecommendedTrackCellViewModel.swift
 //  spotify-sub
 //
 //  Created by Santiago Varela on 17/08/24.

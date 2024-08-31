@@ -17,71 +17,70 @@ protocol PlayerDataSource: AnyObject {
 
 final class PlaybackPresenter {
     static let shared = PlaybackPresenter()
-    
+
     var playerVC: PlayerViewController?
-    
+
     private var track: AudioTrack?
     private var tracks = [AudioTrack]()
-    
+
     var index = 0
-    
+
     var currentTrack: AudioTrack? {
         if let track = track, tracks.isEmpty {
             return track
-        } else if let player = self.playerQueue, !tracks.isEmpty {
+        } else if let player = playerQueue, !tracks.isEmpty {
             return tracks[index]
         }
-        
+
         return nil
     }
-    
+
     var player: AVPlayer?
     var playerQueue: AVQueuePlayer?
-    
+
     func startPlayback(from viewController: UIViewController, track: AudioTrack) {
         guard let url = URL(string: track.preview_url ?? "") else {
             return
         }
         player = AVPlayer(url: url)
         player?.volume = 0.5
-        
-        self.tracks = []
+
+        tracks = []
         self.track = track
-        
+
         let vc = PlayerViewController()
         vc.title = track.name
         vc.dataSource = self
         vc.delegate = self
-        
+
         viewController.present(UINavigationController(rootViewController: vc), animated: true) { [weak self] in
             self?.player?.play()
         }
-        
-        self.playerVC = vc
+
+        playerVC = vc
     }
-    
+
     func startPlayback(from viewController: UIViewController, tracks: [AudioTrack]) {
         self.tracks = tracks
-        self.track = nil
-        
-        self.playerQueue = AVQueuePlayer(items: tracks.compactMap({
+        track = nil
+
+        playerQueue = AVQueuePlayer(items: tracks.compactMap {
             guard let url = URL(string: $0.preview_url ?? "") else {
                 return nil
             }
             return AVPlayerItem(url: url)
-        }))
-        self.playerQueue?.volume = 0.5
-        
+        })
+        playerQueue?.volume = 0.5
+
         let vc = PlayerViewController()
         vc.dataSource = self
         vc.delegate = self
-        
-        viewController.present(UINavigationController(rootViewController: vc), animated: true)  { [weak self] in
+
+        viewController.present(UINavigationController(rootViewController: vc), animated: true) { [weak self] in
             self?.playerQueue?.play()
         }
-        
-        self.playerVC = vc
-        
+
+        playerVC = vc
     }
 }
 
@@ -101,7 +100,7 @@ extension PlaybackPresenter: PlayerViewControllerDelegate {
             }
         }
     }
-    
+
     func didTapNext() {
         if tracks.isEmpty {
             player?.pause()
@@ -111,7 +110,7 @@ extension PlaybackPresenter: PlayerViewControllerDelegate {
             playerVC?.refreshUI()
         }
     }
-    
+
     func didTapBack() {
         if tracks.isEmpty {
             player?.pause()
@@ -124,7 +123,7 @@ extension PlaybackPresenter: PlayerViewControllerDelegate {
             playerQueue?.volume = 0.5
         }
     }
-    
+
     func didSlideSlider(_ value: Float) {
         player?.volume = value
     }
@@ -134,11 +133,11 @@ extension PlaybackPresenter: PlayerDataSource {
     var songName: String? {
         return currentTrack?.name
     }
-    
+
     var subtitle: String? {
         return currentTrack?.artists.first?.name
     }
-    
+
     var imageURL: URL? {
         return URL(string: currentTrack?.album?.images.first?.url ?? "")
     }
