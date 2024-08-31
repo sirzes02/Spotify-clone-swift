@@ -32,6 +32,10 @@ extension UIView {
     var bottom: CGFloat {
         return top + height
     }
+
+    func addSubviews(_ views: UIView...) {
+        views.forEach { addSubview($0) }
+    }
 }
 
 extension DateFormatter {

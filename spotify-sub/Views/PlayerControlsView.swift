@@ -12,7 +12,7 @@ protocol PlayerControlsViewDelegate: AnyObject {
     func playerControlsViewDidTapPlayPauseButton(_ playerControlsView: PlayerControlsView)
     func playerControlsViewDidTapNextButton(_ playerControlsView: PlayerControlsView)
     func playerControlsViewDidTapBackButton(_ playerControlsView: PlayerControlsView)
-    func playerControlsView(_playerControlsView: PlayerControlsView, didSlideSlider value: Float)
+    func playerControlsView(_ playerControlsView: PlayerControlsView, didSlideSlider value: Float)
 }
 
 struct PlayerControlsViewViewModel {
@@ -23,11 +23,28 @@ struct PlayerControlsViewViewModel {
 final class PlayerControlsView: UIView {
     weak var delegate: PlayerControlsViewDelegate?
 
+    enum Constants {
+        enum Values {
+            static let volumeDefault: Float = 0.5
+            static let fontSizeSemibold: CGFloat = 20
+            static let fontSizeRegular: CGFloat = 18
+            static let imagePointSizeDefault: CGFloat = 34
+            static let buttonSizeDefault: CGFloat = 60
+            static let backNextPadding: CGFloat = 80
+            static let defaultPadding: CGFloat = 10
+            static let defaultHeightPadding: CGFloat = 50
+            static let playPauseButtonTopPadding: CGFloat = 30
+            static let VolumeSliderHeightPadding: CGFloat = 44
+            static let VolumeSliderTopPadding: CGFloat = 20
+        }
+    }
+
     private var isPlaying = true
 
     private let volumeSlider: UISlider = {
         let slider = UISlider()
-        slider.value = 0.5
+        slider.value = Constants.Values.volumeDefault
+        slider.translatesAutoresizingMaskIntoConstraints = false
 
         return slider
     }()
@@ -35,7 +52,8 @@ final class PlayerControlsView: UIView {
     private let nameLabel: UILabel = {
         let label = UILabel()
         label.numberOfLines = 1
-        label.font = .systemFont(ofSize: 20, weight: .semibold)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeSemibold, weight: .semibold)
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
@@ -43,8 +61,9 @@ final class PlayerControlsView: UIView {
     private let subtitleLabel: UILabel = {
         let label = UILabel()
         label.numberOfLines = 1
-        label.font = .systemFont(ofSize: 18, weight: .regular)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeRegular, weight: .regular)
         label.textColor = .secondaryLabel
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
@@ -55,9 +74,10 @@ final class PlayerControlsView: UIView {
 
         let image = UIImage(
             systemName: "backward.fill",
-            withConfiguration: UIImage.SymbolConfiguration(pointSize: 34, weight: .regular)
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: Constants.Values.imagePointSizeDefault, weight: .regular)
         )
         button.setImage(image, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
 
         return button
     }()
@@ -68,9 +88,10 @@ final class PlayerControlsView: UIView {
 
         let image = UIImage(
             systemName: "forward.fill",
-            withConfiguration: UIImage.SymbolConfiguration(pointSize: 34, weight: .regular)
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: Constants.Values.imagePointSizeDefault, weight: .regular)
         )
         button.setImage(image, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
 
         return button
     }()
@@ -81,37 +102,70 @@ final class PlayerControlsView: UIView {
 
         let image = UIImage(
             systemName: "pause",
-            withConfiguration: UIImage.SymbolConfiguration(pointSize: 34, weight: .regular)
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: Constants.Values.imagePointSizeDefault, weight: .regular)
         )
         button.setImage(image, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
 
         return button
     }()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+
         backgroundColor = .clear
+        addSubviews(nameLabel, subtitleLabel, volumeSlider, backButton, nextButton, playPauseButton)
 
-        addSubview(nameLabel)
-        addSubview(subtitleLabel)
-
-        addSubview(volumeSlider)
         volumeSlider.addTarget(self, action: #selector(didSlideSlider(_:)), for: .valueChanged)
-
-        addSubview(backButton)
-        addSubview(nextButton)
-        addSubview(playPauseButton)
-
         backButton.addTarget(self, action: #selector(didTapBack), for: .touchUpInside)
         nextButton.addTarget(self, action: #selector(didTapNext), for: .touchUpInside)
         playPauseButton.addTarget(self, action: #selector(didTapPlayPause), for: .touchUpInside)
 
-        clipsToBounds = true
+        setupConstraints()
     }
 
-    @objc func didSlideSlider(_ slider: UISlider) {
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError()
+    }
+
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            nameLabel.topAnchor.constraint(equalTo: topAnchor),
+            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
+            nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            nameLabel.heightAnchor.constraint(equalToConstant: Constants.Values.defaultHeightPadding),
+
+            subtitleLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor, constant: Constants.Values.defaultPadding),
+            subtitleLabel.leadingAnchor.constraint(equalTo: leadingAnchor),
+            subtitleLabel.trailingAnchor.constraint(equalTo: trailingAnchor),
+            subtitleLabel.heightAnchor.constraint(equalToConstant: Constants.Values.defaultHeightPadding),
+
+            volumeSlider.topAnchor.constraint(equalTo: subtitleLabel.bottomAnchor, constant: Constants.Values.VolumeSliderTopPadding),
+            volumeSlider.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.Values.defaultPadding),
+            volumeSlider.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.Values.defaultPadding),
+            volumeSlider.heightAnchor.constraint(equalToConstant: Constants.Values.VolumeSliderHeightPadding),
+
+            playPauseButton.centerXAnchor.constraint(equalTo: centerXAnchor),
+            playPauseButton.topAnchor.constraint(equalTo: volumeSlider.bottomAnchor, constant: Constants.Values.playPauseButtonTopPadding),
+            playPauseButton.widthAnchor.constraint(equalToConstant: Constants.Values.buttonSizeDefault),
+            playPauseButton.heightAnchor.constraint(equalToConstant: Constants.Values.buttonSizeDefault),
+
+            backButton.trailingAnchor.constraint(equalTo: playPauseButton.leadingAnchor, constant: -Constants.Values.backNextPadding),
+            backButton.centerYAnchor.constraint(equalTo: playPauseButton.centerYAnchor),
+            backButton.widthAnchor.constraint(equalToConstant: Constants.Values.buttonSizeDefault),
+            backButton.heightAnchor.constraint(equalToConstant: Constants.Values.buttonSizeDefault),
+
+            nextButton.leadingAnchor.constraint(equalTo: playPauseButton.trailingAnchor, constant: Constants.Values.backNextPadding),
+            nextButton.centerYAnchor.constraint(equalTo: playPauseButton.centerYAnchor),
+            nextButton.widthAnchor.constraint(equalToConstant: Constants.Values.buttonSizeDefault),
+            nextButton.heightAnchor.constraint(equalToConstant: Constants.Values.buttonSizeDefault),
+        ])
+    }
+
+    @objc private func didSlideSlider(_ slider: UISlider) {
         let value = slider.value
-        delegate?.playerControlsView(_playerControlsView: self, didSlideSlider: value)
+        delegate?.playerControlsView(self, didSlideSlider: value)
     }
 
     @objc private func didTapBack() {
@@ -124,54 +178,17 @@ final class PlayerControlsView: UIView {
 
     @objc private func didTapPlayPause() {
         isPlaying = !isPlaying
-        delegate?.playerControlsViewDidTapBackButton(self)
+        delegate?.playerControlsViewDidTapPlayPauseButton(self)
 
-        // Update icon
         let pause = UIImage(
             systemName: "pause",
-            withConfiguration: UIImage.SymbolConfiguration(pointSize: 34, weight: .regular)
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: Constants.Values.imagePointSizeDefault, weight: .regular)
         )
         let play = UIImage(
             systemName: "play.fill",
-            withConfiguration: UIImage.SymbolConfiguration(pointSize: 34, weight: .regular)
+            withConfiguration: UIImage.SymbolConfiguration(pointSize: Constants.Values.imagePointSizeDefault, weight: .regular)
         )
         playPauseButton.setImage(isPlaying ? pause : play, for: .normal)
-    }
-
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
-        fatalError()
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        nameLabel.frame = CGRect(x: 0, y: 0, width: width, height: 50)
-        subtitleLabel.frame = CGRect(x: 0, y: nameLabel.bottom + 10, width: width, height: 50)
-
-        volumeSlider.frame = CGRect(x: 10, y: subtitleLabel.bottom + 20, width: width - 20, height: 44)
-
-        let buttonSize: CGFloat = 60
-        playPauseButton.frame = CGRect(
-            x: (width - buttonSize) / 2,
-
-            y: volumeSlider.bottom + 30,
-            width: buttonSize,
-            height: buttonSize
-        )
-        backButton.frame = CGRect(
-            x: playPauseButton.left - 80 - buttonSize,
-            y: playPauseButton.top,
-            width: buttonSize,
-
-            height: buttonSize
-        )
-        nextButton.frame = CGRect(
-            x: playPauseButton.right + 80,
-
-            y: playPauseButton.top,
-            width: buttonSize,
-            height: buttonSize
-        )
     }
 
     func configure(with viewModel: PlayerControlsViewViewModel) {

@@ -8,32 +8,59 @@
 import UIKit
 
 class LibraryPlaylistViewController: UIViewController {
-    var playlists = [Playlist]()
+    enum Constants {
+        enum Values {
+            static let noPlaylistsViewSize: CGFloat = 150
+            static let rowHeightDefault: CGFloat = 70
+        }
 
+        enum Labels {
+            static let noPlayslist = "You do not have any playlist yet."
+            static let create = "Create"
+            static let newPlaylisTitle = "New Playlist"
+            static let newPlaylisMessage = "Enter playlist name"
+            static let newPlaylisPlaceholder = "Playlist..."
+            static let cancel = "Cancel"
+        }
+    }
+
+    private var playlists = [Playlist]()
     public var selectionHandler: ((Playlist) -> Void)?
 
-    private let noPlaylistView = ActionLabelView()
+    private lazy var noPlaylistView: ActionLabelView = {
+        let view = ActionLabelView()
+        view.isHidden = true
+        view.delegate = self
+        view.configure(with: ActionLabelViewViewModel(
+            text: Constants.Labels.noPlayslist,
+            actionTitle: Constants.Labels.create
+        ))
+        view.translatesAutoresizingMaskIntoConstraints = false
 
-    private let tableView: UITableView = {
+        return view
+    }()
+
+    private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .grouped)
         tableView.register(
             SearchResultSubtitleTableViewCell.self,
             forCellReuseIdentifier: SearchResultSubtitleTableViewCell.identifier
         )
         tableView.isHidden = true
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.translatesAutoresizingMaskIntoConstraints = false
 
         return tableView
     }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         view.backgroundColor = .systemBackground
+        view.addSubviews(tableView, noPlaylistView)
 
-        tableView.delegate = self
-        tableView.dataSource = self
-        view.addSubview(tableView)
-
-        setUpNoPlaylistView()
+        setUpConstraints()
         fetchData()
 
         if selectionHandler != nil {
@@ -45,26 +72,22 @@ class LibraryPlaylistViewController: UIViewController {
         }
     }
 
-    @objc func didTapClose() {
+    private func setUpConstraints() {
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            noPlaylistView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            noPlaylistView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            noPlaylistView.widthAnchor.constraint(equalToConstant: Constants.Values.noPlaylistsViewSize),
+            noPlaylistView.heightAnchor.constraint(equalToConstant: Constants.Values.noPlaylistsViewSize),
+        ])
+    }
+
+    @objc private func didTapClose() {
         dismiss(animated: true)
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-
-        noPlaylistView.frame = CGRect(x: 0, y: 0, width: 150, height: 150)
-        noPlaylistView.center = view.center
-
-        tableView.frame = view.bounds
-    }
-
-    private func setUpNoPlaylistView() {
-        view.addSubview(noPlaylistView)
-        noPlaylistView.delegate = self
-        noPlaylistView.configure(with: ActionLabelViewViewModel(
-            text: "you do not have any playlist yet.",
-            actionTitle: "Create"
-        ))
     }
 
     private func fetchData() {
@@ -86,24 +109,24 @@ class LibraryPlaylistViewController: UIViewController {
             noPlaylistView.isHidden = false
             tableView.isHidden = true
         } else {
-            tableView.reloadData()
             noPlaylistView.isHidden = true
             tableView.isHidden = false
+            tableView.reloadData()
         }
     }
 
     public func showCreatePlaylistAlert() {
         let alert = UIAlertController(
-            title: "New Playlist",
-            message: "Enter playlist name",
+            title: Constants.Labels.newPlaylisTitle,
+            message: Constants.Labels.newPlaylisMessage,
             preferredStyle: .alert
         )
         alert.addTextField { textField in
-            textField.placeholder = "Playlist..."
+            textField.placeholder = Constants.Labels.newPlaylisPlaceholder
         }
 
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Create", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: Constants.Labels.cancel, style: .cancel))
+        alert.addAction(UIAlertAction(title: Constants.Labels.create, style: .default) { _ in
             guard let field = alert.textFields?.first,
                   let text = field.text,
                   !text.trimmingCharacters(in: .whitespaces).isEmpty
@@ -144,12 +167,12 @@ extension LibraryPlaylistViewController: UITableViewDelegate, UITableViewDataSou
         ) as? SearchResultSubtitleTableViewCell else {
             return UITableViewCell()
         }
-        let playlists = playlists[indexPath.row]
+        let playlist = playlists[indexPath.row]
 
         cell.configure(with: SearchResultSubtitleTableViewCellViewModel(
-            title: playlists.name,
-            subtitle: playlists.owner.display_name,
-            imageURL: URL(string: playlists.images?.first?.url ?? "")
+            title: playlist.name,
+            subtitle: playlist.owner.display_name,
+            imageURL: URL(string: playlist.images?.first?.url ?? "")
         ))
 
         return cell
@@ -174,6 +197,6 @@ extension LibraryPlaylistViewController: UITableViewDelegate, UITableViewDataSou
     }
 
     func tableView(_: UITableView, heightForRowAt _: IndexPath) -> CGFloat {
-        70
+        Constants.Values.rowHeightDefault
     }
 }

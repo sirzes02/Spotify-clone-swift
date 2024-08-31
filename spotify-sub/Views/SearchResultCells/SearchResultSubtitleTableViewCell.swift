@@ -11,9 +11,20 @@ import UIKit
 class SearchResultSubtitleTableViewCell: UITableViewCell {
     static let identifier = "SearchResultSubtitleTableViewCell"
 
+    enum Constants {
+        enum Values {
+            static let paddingLeadingDefault: CGFloat = 10
+            static let paddingTrailingDefault: CGFloat = 15
+            static let paddingVerticalDefault: CGFloat = 5
+            static let paddingSubtitleLabelBottomDefault: CGFloat = 2
+            static let imageSizeDefault: CGFloat = 50
+        }
+    }
+
     private let label: UILabel = {
         let label = UILabel()
         label.numberOfLines = 1
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
@@ -22,6 +33,7 @@ class SearchResultSubtitleTableViewCell: UITableViewCell {
         let label = UILabel()
         label.textColor = .secondaryLabel
         label.numberOfLines = 1
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
@@ -29,17 +41,19 @@ class SearchResultSubtitleTableViewCell: UITableViewCell {
     private let iconImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
+        imageView.translatesAutoresizingMaskIntoConstraints = false
+        imageView.clipsToBounds = true
 
         return imageView
     }()
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        addSubview(label)
-        addSubview(subtitleLabel)
-        addSubview(iconImageView)
-        clipsToBounds = true
+
+        contentView.addSubviews(label, subtitleLabel, iconImageView)
         accessoryType = .disclosureIndicator
+
+        setupConstraints()
     }
 
     @available(*, unavailable)
@@ -47,31 +61,28 @@ class SearchResultSubtitleTableViewCell: UITableViewCell {
         fatalError()
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            iconImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.Values.paddingLeadingDefault),
+            iconImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            iconImageView.widthAnchor.constraint(equalToConstant: Constants.Values.imageSizeDefault),
+            iconImageView.heightAnchor.constraint(equalToConstant: Constants.Values.imageSizeDefault),
 
-        let imageSize: CGFloat = height - 10
-        iconImageView.frame = CGRect(x: 10, y: 5, width: imageSize, height: imageSize)
+            label.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.Values.paddingLeadingDefault),
+            label.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.Values.paddingTrailingDefault),
+            label.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.Values.paddingVerticalDefault),
 
-        let labelHeight: CGFloat = height / 2
-        label.frame = CGRect(
-            x: iconImageView.right + 10,
-
-            y: 0,
-            width: width - iconImageView.right - 15,
-            height: labelHeight
-        )
-        subtitleLabel.frame = CGRect(
-            x: iconImageView.right + 10,
-
-            y: label.bottom,
-            width: width - iconImageView.right - 15,
-            height: labelHeight
-        )
+            subtitleLabel.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.Values.paddingLeadingDefault),
+            subtitleLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.Values.paddingTrailingDefault),
+            subtitleLabel.topAnchor.constraint(equalTo: label.bottomAnchor, constant: Constants.Values.paddingSubtitleLabelBottomDefault),
+            subtitleLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Constants.Values.paddingVerticalDefault),
+        ])
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
+
+        iconImageView.sd_cancelCurrentImageLoad()
         iconImageView.image = nil
         label.text = nil
         subtitleLabel.text = nil

@@ -8,8 +8,16 @@
 import UIKit
 import WebKit
 
-class AuthViewController: UIViewController, WKNavigationDelegate {
-    private let webView: WKWebView = {
+class AuthViewController: UIViewController {
+    enum Constants {
+        enum Labels {
+            static let signIn = "Sign In"
+        }
+    }
+
+    public var completionHandler: ((Bool) -> Void)?
+
+    private lazy var webView: WKWebView = {
         let prefs = WKWebpagePreferences()
         prefs.allowsContentJavaScript = true
 
@@ -17,40 +25,43 @@ class AuthViewController: UIViewController, WKNavigationDelegate {
         config.defaultWebpagePreferences = prefs
 
         let webView = WKWebView(frame: .zero, configuration: config)
+        webView.navigationDelegate = self
+        webView.translatesAutoresizingMaskIntoConstraints = false
 
         return webView
     }()
 
-    public var completionHandler: ((Bool) -> Void)?
-
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = "Sign In"
+        title = Constants.Labels.signIn
         view.backgroundColor = .systemBackground
-        webView.navigationDelegate = self
         view.addSubview(webView)
 
-        guard let url = AuthManager.shared.signInURL else {
-            return
-        }
+        setUpConstraints()
+        loadSignInPage()
+    }
 
+    private func setUpConstraints() {
+        NSLayoutConstraint.activate([
+            webView.topAnchor.constraint(equalTo: view.topAnchor),
+            webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+    }
+
+    private func loadSignInPage() {
+        guard let url = AuthManager.shared.signInURL else { return }
         webView.load(URLRequest(url: url))
     }
+}
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-
-        webView.frame = view.bounds
-    }
-
+extension AuthViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didStartProvisionalNavigation _: WKNavigation!) {
-        guard let url = webView.url else {
-            return
-        }
-
-        // Exchange the code for access token
-        guard let code = URLComponents(string: url.absoluteString)?.queryItems?.first(where: { $0.name == "code" })?.value else {
+        guard let url = webView.url,
+              let code = URLComponents(string: url.absoluteString)?.queryItems?.first(where: { $0.name == "code" })?.value
+        else {
             return
         }
 

@@ -16,6 +16,12 @@ protocol PlayerDataSource: AnyObject {
 }
 
 final class PlaybackPresenter {
+    enum Constants {
+        enum Values {
+            static let volumeDefault: Float = 0.5
+        }
+    }
+
     static let shared = PlaybackPresenter()
 
     var playerVC: PlayerViewController?
@@ -28,7 +34,7 @@ final class PlaybackPresenter {
     var currentTrack: AudioTrack? {
         if let track = track, tracks.isEmpty {
             return track
-        } else if let player = playerQueue, !tracks.isEmpty {
+        } else if playerQueue != nil, !tracks.isEmpty {
             return tracks[index]
         }
 
@@ -43,7 +49,7 @@ final class PlaybackPresenter {
             return
         }
         player = AVPlayer(url: url)
-        player?.volume = 0.5
+        player?.volume = Constants.Values.volumeDefault
 
         tracks = []
         self.track = track
@@ -70,7 +76,7 @@ final class PlaybackPresenter {
             }
             return AVPlayerItem(url: url)
         })
-        playerQueue?.volume = 0.5
+        playerQueue?.volume = Constants.Values.volumeDefault
 
         let vc = PlayerViewController()
         vc.dataSource = self
@@ -120,7 +126,7 @@ extension PlaybackPresenter: PlayerViewControllerDelegate {
             playerQueue?.removeAllItems()
             playerQueue = AVQueuePlayer(items: [firstItem])
             playerQueue?.play()
-            playerQueue?.volume = 0.5
+            playerQueue?.volume = Constants.Values.volumeDefault
         }
     }
 

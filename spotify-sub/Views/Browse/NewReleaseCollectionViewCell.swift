@@ -11,47 +11,60 @@ import UIKit
 class NewReleaseCollectionViewCell: UICollectionViewCell {
     static let identifier = "NewReleaseCollectionViewCell"
 
+    enum Constants {
+        enum Values {
+            static let paddingLabelsDefault: CGFloat = 10
+            static let paddingVerticalDefault: CGFloat = 5
+            static let paddingSubtitleLabelBottomDefault: CGFloat = 2
+            static let fontSizeSemibold: CGFloat = 20
+            static let fontSizeThinLight: CGFloat = 18
+        }
+    }
+
     private let albumCoverImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.image = UIImage(systemName: "photo")
         imageView.contentMode = .scaleAspectFill
+        imageView.clipsToBounds = true
+        imageView.translatesAutoresizingMaskIntoConstraints = false
 
         return imageView
     }()
 
     private let albumNameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 20, weight: .semibold)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeSemibold, weight: .semibold)
         label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
 
     private let numberOfTracksLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .thin)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeThinLight, weight: .thin)
         label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
 
     private let artistNameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .light)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeThinLight, weight: .light)
         label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = .secondarySystemBackground
-        addSubview(albumCoverImageView)
-        addSubview(albumNameLabel)
-        addSubview(numberOfTracksLabel)
-        addSubview(artistNameLabel)
 
-        clipsToBounds = true
+        contentView.backgroundColor = .secondarySystemBackground
+        contentView.addSubviews(albumCoverImageView, albumNameLabel, numberOfTracksLabel, artistNameLabel)
+
+        setupConstraints()
     }
 
     @available(*, unavailable)
@@ -59,51 +72,34 @@ class NewReleaseCollectionViewCell: UICollectionViewCell {
         fatalError()
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        albumNameLabel.sizeToFit()
-        artistNameLabel.sizeToFit()
-        numberOfTracksLabel.sizeToFit()
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            albumCoverImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.Values.paddingVerticalDefault),
+            albumCoverImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.Values.paddingVerticalDefault),
+            albumCoverImageView.widthAnchor.constraint(equalTo: contentView.heightAnchor),
+            albumCoverImageView.heightAnchor.constraint(equalTo: contentView.heightAnchor),
 
-        let imageSize: CGFloat = contentView.height - 10
-        let albumLabelSize = albumNameLabel.sizeThatFits(CGSize(width: contentView.width - imageSize - 10, height: contentView.height - 10))
+            albumNameLabel.leadingAnchor.constraint(equalTo: albumCoverImageView.trailingAnchor, constant: Constants.Values.paddingLabelsDefault),
+            albumNameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.Values.paddingLabelsDefault),
+            albumNameLabel.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.Values.paddingVerticalDefault),
 
-        artistNameLabel.sizeToFit()
-        numberOfTracksLabel.sizeToFit()
+            artistNameLabel.leadingAnchor.constraint(equalTo: albumCoverImageView.trailingAnchor, constant: Constants.Values.paddingLabelsDefault),
+            artistNameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.Values.paddingLabelsDefault),
+            artistNameLabel.topAnchor.constraint(equalTo: albumNameLabel.bottomAnchor, constant: Constants.Values.paddingVerticalDefault),
 
-        // Image
-        albumCoverImageView.frame = CGRect(x: 5, y: 5, width: imageSize, height: imageSize)
-
-        // Album name label
-        let albumLabelHeight = min(60, albumLabelSize.height)
-
-        albumNameLabel.frame = CGRect(
-            x: albumCoverImageView.right + 10,
-            y: 5,
-            width: albumLabelSize.width,
-            height: albumLabelHeight
-        )
-
-        artistNameLabel.frame = CGRect(
-            x: albumCoverImageView.right + 10,
-            y: albumNameLabel.bottom,
-            width: contentView.width - albumCoverImageView.right - 10,
-            height: 30
-        )
-
-        numberOfTracksLabel.frame = CGRect(
-            x: albumCoverImageView.right + 10,
-            y: contentView.bottom - 44,
-            width: numberOfTracksLabel.width,
-            height: 44
-        )
+            numberOfTracksLabel.leadingAnchor.constraint(equalTo: albumCoverImageView.trailingAnchor, constant: Constants.Values.paddingLabelsDefault),
+            numberOfTracksLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.Values.paddingLabelsDefault),
+            numberOfTracksLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Constants.Values.paddingVerticalDefault),
+        ])
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
+
         albumNameLabel.text = nil
         artistNameLabel.text = nil
         numberOfTracksLabel.text = nil
+        albumCoverImageView.sd_cancelCurrentImageLoad()
         albumCoverImageView.image = nil
     }
 

@@ -12,7 +12,7 @@ final class AuthManager {
 
     private var refreshingToken = false
 
-    enum Constants {
+    private enum Constants {
         static let clientID = "80f0d294116146f39c48bfb6a8fb8dea"
         static let clientSecret = "3c1d640da06a4f3ca437c6752be471b0"
         static let tokenAPIURL = "https://accounts.spotify.com/api/token"
@@ -24,90 +24,43 @@ final class AuthManager {
 
     public var signInURL: URL? {
         let base = "https://accounts.spotify.com/authorize"
-        let string = "\(base)?response_type=code&client_id=\(Constants.clientID)&scope=\(Constants.scopes)&redirect_uri=\(Constants.redirectURI)&state=12&show_dialog=TRUE"
+        let query = "?response_type=code&client_id=\(Constants.clientID)&scope=\(Constants.scopes)&redirect_uri=\(Constants.redirectURI)&state=12&show_dialog=TRUE"
 
-        return URL(string: string)
+        return URL(string: "\(base)\(query)")
     }
 
     var isSignedIn: Bool {
-        return accessToken != nil
+        accessToken != nil
     }
 
     private var accessToken: String? {
-        return UserDefaults.standard.string(forKey: "access_token")
+        UserDefaults.standard.string(forKey: "access_token")
     }
 
     private var refreshToken: String? {
-        return UserDefaults.standard.string(forKey: "refresh_token")
+        UserDefaults.standard.string(forKey: "refresh_token")
     }
 
     private var tokenExpirationDate: Date? {
-        return UserDefaults.standard.object(forKey: "expirationDate") as? Date
+        UserDefaults.standard.object(forKey: "expirationDate") as? Date
     }
 
     private var shouldRefreshToken: Bool {
-        guard let expirationDate = tokenExpirationDate else {
-            return false
-        }
-
-        let currentDate = Date()
-        let fiveMinutes: TimeInterval = 300
-
-        return currentDate.addingTimeInterval(fiveMinutes) >= expirationDate
-    }
-
-    public func exchangeCodeForToken(code: String, completion: @escaping ((Bool) -> Void)) {
-        // Get Token
-        guard let url = URL(string: Constants.tokenAPIURL) else {
-            return
-        }
-
-        var components = URLComponents()
-        components.queryItems = [
-            URLQueryItem(name: "grant_type", value: "authorization_code"),
-            URLQueryItem(name: "code", value: code),
-            URLQueryItem(name: "redirect_uri", value: Constants.redirectURI),
-        ]
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded ", forHTTPHeaderField: "Content-Type")
-        request.httpBody = components.query?.data(using: .utf8)
-
-        let basicToken = Constants.clientID + ":" + Constants.clientSecret
-        let data = basicToken.data(using: .utf8)
-        guard let base64String = data?.base64EncodedString() else {
-            print("Failure to get base64")
-            completion(false)
-            return
-        }
-
-        request.setValue("Basic \(base64String)", forHTTPHeaderField: "Authorization")
-
-        let task = URLSession.shared.dataTask(with: request) { data, _, error in
-            guard let data = data, error == nil else {
-                completion(false)
-                return
-            }
-
-            do {
-                let result = try JSONDecoder().decode(AuthResponse.self, from: data)
-                self.cacheToken(result: result)
-                completion(true)
-            } catch {
-                print(error.localizedDescription)
-                completion(false)
-            }
-        }
-        task.resume()
+        guard let expirationDate = tokenExpirationDate else { return false }
+        return Date().addingTimeInterval(300) >= expirationDate // 5 minutes buffer
     }
 
     private var onRefreshBlocks = [(String) -> Void]()
 
-    /// Supplies valid token to be used with API calls
+    public func exchangeCodeForToken(code: String, completion: @escaping (Bool) -> Void) {
+        guard let url = URL(string: Constants.tokenAPIURL) else { return }
+
+        let request = createTokenRequest(url: url, grantType: "authorization_code", code: code)
+        performTokenRequest(request, completion: completion)
+    }
+
     public func withValidToken(completion: @escaping (String) -> Void) {
         guard !refreshingToken else {
-            // append the completion
             onRefreshBlocks.append(completion)
             return
         }
@@ -124,64 +77,72 @@ final class AuthManager {
     }
 
     public func refreshIfNeeded(completion: ((Bool) -> Void)?) {
-        guard !refreshingToken else {
-            return
-        }
-
-        guard shouldRefreshToken else {
+        guard !refreshingToken, shouldRefreshToken, let refreshToken = refreshToken, let url = URL(string: Constants.tokenAPIURL) else {
             completion?(true)
-            return
-        }
-
-        guard let refreshToken = refreshToken else {
-            return
-        }
-
-        // Refresh the token
-        guard let url = URL(string: Constants.tokenAPIURL) else {
             return
         }
 
         refreshingToken = true
 
+        let request = createTokenRequest(url: url, grantType: "refresh_token", refreshToken: refreshToken)
+
+        performTokenRequest(request) { [weak self] success in
+            self?.refreshingToken = false
+
+            if success {
+                self?.onRefreshBlocks.forEach { $0(self?.accessToken ?? "") }
+                self?.onRefreshBlocks.removeAll()
+            }
+
+            completion?(success)
+        }
+    }
+
+    private func createTokenRequest(url: URL, grantType: String, code: String? = nil, refreshToken: String? = nil) -> URLRequest {
         var components = URLComponents()
+
         components.queryItems = [
-            URLQueryItem(name: "grant_type", value: "refresh_token"),
-            URLQueryItem(name: "refresh_token", value: refreshToken),
+            URLQueryItem(name: "grant_type", value: grantType),
+            URLQueryItem(name: "redirect_uri", value: Constants.redirectURI),
         ]
+
+        if let code = code {
+            components.queryItems?.append(URLQueryItem(name: "code", value: code))
+        }
+
+        if let refreshToken = refreshToken {
+            components.queryItems?.append(URLQueryItem(name: "refresh_token", value: refreshToken))
+        }
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("application/x-www-form-urlencoded ", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.httpBody = components.query?.data(using: .utf8)
 
-        let basicToken = Constants.clientID + ":" + Constants.clientSecret
-        let data = basicToken.data(using: .utf8)
-        guard let base64String = data?.base64EncodedString() else {
-            print("Failure to get base64")
-            completion?(false)
-            return
+        let basicToken = "\(Constants.clientID):\(Constants.clientSecret)"
+
+        if let base64String = basicToken.data(using: .utf8)?.base64EncodedString() {
+            request.setValue("Basic \(base64String)", forHTTPHeaderField: "Authorization")
         }
 
-        request.setValue("Basic \(base64String)", forHTTPHeaderField: "Authorization")
+        return request
+    }
 
-        let task = URLSession.shared.dataTask(with: request) { data, _, error in
-            self.refreshingToken = false
-
+    private func performTokenRequest(_ request: URLRequest, completion: @escaping (Bool) -> Void) {
+        let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
             guard let data = data, error == nil else {
-                completion?(false)
+                completion(false)
                 return
             }
 
             do {
                 let result = try JSONDecoder().decode(AuthResponse.self, from: data)
-                self.onRefreshBlocks.forEach { $0(result.access_token) }
-                self.onRefreshBlocks.removeAll()
-                self.cacheToken(result: result)
-                completion?(true)
+                self?.cacheToken(result: result)
+
+                completion(true)
             } catch {
-                print(error.localizedDescription)
-                completion?(false)
+                print("Token decoding error: \(error.localizedDescription)")
+                completion(false)
             }
         }
         task.resume()
@@ -198,9 +159,9 @@ final class AuthManager {
     }
 
     public func signOut(completion: (Bool) -> Void) {
-        UserDefaults.standard.setValue(nil, forKey: "access_token")
-        UserDefaults.standard.setValue(nil, forKey: "refresh_token")
-        UserDefaults.standard.setValue(nil, forKey: "expirationDate")
+        UserDefaults.standard.removeObject(forKey: "access_token")
+        UserDefaults.standard.removeObject(forKey: "refresh_token")
+        UserDefaults.standard.removeObject(forKey: "expirationDate")
 
         completion(true)
     }

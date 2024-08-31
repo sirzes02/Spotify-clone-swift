@@ -8,45 +8,71 @@
 import UIKit
 
 class WelcomeViewController: UIViewController {
-    private let signInButton: UIButton = {
+    enum Constants {
+        enum Values {
+            static let overlayViewAlpha: CGFloat = 0.7
+            static let fontSizeDefault: CGFloat = 32
+            static let logoImageSize: CGFloat = 120
+            static let logoImageCenterY: CGFloat = 100
+            static let labelPadding: CGFloat = 30
+            static let SignInButtonPadding: CGFloat = 20
+            static let SignInButtonHeight: CGFloat = 50
+        }
+
+        enum Labels {
+            static let singIn = "Sign In with Spotify"
+            static let title = "Spotify"
+            static let description = "Listen to millions\nof Songs on\nthe go."
+            static let oops = "Oops"
+            static let somethingWrong = "Something went wrong when signing in."
+            static let dissmiss = "Dissmis"
+        }
+    }
+
+    private lazy var signInButton: UIButton = {
         let button = UIButton()
         button.backgroundColor = .white
-        button.setTitle("Sign In with Spotify", for: .normal)
+        button.setTitle(Constants.Labels.singIn, for: .normal)
         button.setTitleColor(.blue, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.addTarget(self, action: #selector(didTapSignIn), for: .touchUpInside)
 
         return button
     }()
 
-    private let imageView: UIImageView = {
-        let imageView = UIImageView()
+    private lazy var imageView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(named: "albums_background"))
         imageView.contentMode = .scaleAspectFill
-        imageView.image = UIImage(named: "albums_background")
+        imageView.translatesAutoresizingMaskIntoConstraints = false
 
         return imageView
     }()
 
-    private let overlayView: UIView = {
+    private lazy var overlayView: UIView = {
         let view = UIView()
         view.backgroundColor = .black
-        view.alpha = 0.7
+        view.alpha = Constants.Values.overlayViewAlpha
+        view.translatesAutoresizingMaskIntoConstraints = false
 
         return view
     }()
 
-    private let logoImageView: UIImageView = {
+    private lazy var logoImageView: UIImageView = {
         let imageView = UIImageView(image: UIImage(named: "Logo"))
         imageView.contentMode = .scaleAspectFit
+        imageView.translatesAutoresizingMaskIntoConstraints = false
 
         return imageView
     }()
 
-    private let label: UILabel = {
+    private lazy var label: UILabel = {
         let label = UILabel()
         label.numberOfLines = 0
         label.textAlignment = .center
         label.textColor = .white
-        label.font = .systemFont(ofSize: 32, weight: .semibold)
-        label.text = "Listen to millions\nof Songs on\nthe go."
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeDefault, weight: .semibold)
+        label.text = Constants.Labels.description
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
@@ -54,65 +80,64 @@ class WelcomeViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        title = "Spotify"
+        title = Constants.Labels.title
+        view.addSubviews(imageView, overlayView, logoImageView, label, signInButton)
 
-        view.addSubview(imageView)
-        view.addSubview(overlayView)
-
-        view.backgroundColor = .blue
-
-        view.addSubview(signInButton)
-
-        signInButton.addTarget(self, action: #selector(didTapSignIn), for: .touchUpInside)
-
-        view.addSubview(label)
-        view.addSubview(logoImageView)
+        setUpConstraints()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
+    private func setUpConstraints() {
+        NSLayoutConstraint.activate([
+            imageView.topAnchor.constraint(equalTo: view.topAnchor),
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            imageView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-        imageView.frame = view.bounds
-        overlayView.frame = view.bounds
-        signInButton.frame = CGRect(
-            x: 20,
-            y: view.height - 50 - view.safeAreaInsets.bottom,
-            width: view.width - 40,
-            height: 50
-        )
-        logoImageView.frame = CGRect(
-            x: (view.width - 120) / 2,
-            y: (view.height - 350) / 2,
+            overlayView.topAnchor.constraint(equalTo: view.topAnchor),
+            overlayView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            overlayView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            overlayView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            width: 120,
-            height: 120
-        )
-        label.frame = CGRect(x: 30, y: logoImageView.bottom + 30, width: view.width - 60, height: 150)
+            logoImageView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            logoImageView.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: -Constants.Values.logoImageCenterY),
+            logoImageView.widthAnchor.constraint(equalToConstant: Constants.Values.logoImageSize),
+            logoImageView.heightAnchor.constraint(equalToConstant: Constants.Values.logoImageSize),
+
+            label.topAnchor.constraint(equalTo: logoImageView.bottomAnchor, constant: Constants.Values.labelPadding),
+            label.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.Values.labelPadding),
+            label.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.Values.labelPadding),
+
+            signInButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.Values.SignInButtonPadding),
+            signInButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.Values.SignInButtonPadding),
+            signInButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -Constants.Values.SignInButtonPadding),
+            signInButton.heightAnchor.constraint(equalToConstant: Constants.Values.SignInButtonHeight),
+        ])
     }
 
-    @objc func didTapSignIn() {
+    @objc private func didTapSignIn() {
         let vc = AuthViewController()
         vc.completionHandler = { [weak self] success in
             DispatchQueue.main.async {
                 self?.handleSignIn(success: success)
             }
         }
-        vc.navigationItem.largeTitleDisplayMode = .never
 
+        vc.navigationItem.largeTitleDisplayMode = .never
         navigationController?.pushViewController(vc, animated: true)
     }
 
     private func handleSignIn(success: Bool) {
-        // Log user in or yell at them for error
         guard success else {
-            let alert = UIAlertController(title: "Oops", message: "Something went wrong when signing in.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "Dismiss", style: .cancel))
+            let alert = UIAlertController(title: Constants.Labels.oops, message: Constants.Labels.somethingWrong, preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: Constants.Labels.dissmiss, style: .cancel))
+
             present(alert, animated: true)
+
             return
         }
-
         let mainAppTabVC = TabBarViewController()
         mainAppTabVC.modalPresentationStyle = .fullScreen
+
         present(mainAppTabVC, animated: true)
     }
 }

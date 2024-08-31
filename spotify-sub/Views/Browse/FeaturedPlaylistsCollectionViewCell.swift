@@ -10,41 +10,55 @@ import UIKit
 class FeaturedPlaylistsCollectionViewCell: UICollectionViewCell {
     static let identifier = "FeaturedPlaylistsCollectionViewCell"
 
+    enum Constants {
+        enum Values {
+            static let paddingDefault: CGFloat = 5
+            static let paddingPlaylistNameLabelBottomDefault: CGFloat = 2
+            static let paddingHeightDefault: CGFloat = 30
+            static let imageSizeReducer: CGFloat = 70
+            static let fontSizeRegular: CGFloat = 18
+            static let fontSizeThin: CGFloat = 15
+            static let imageRadius: CGFloat = 4
+        }
+    }
+
     private let playlistCoverImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.image = UIImage(systemName: "photo")
         imageView.layer.masksToBounds = true
-        imageView.layer.cornerRadius = 4
+        imageView.layer.cornerRadius = Constants.Values.imageRadius
         imageView.contentMode = .scaleAspectFill
+        imageView.translatesAutoresizingMaskIntoConstraints = false
 
         return imageView
     }()
 
     private let playlistNameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .regular)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeRegular, weight: .regular)
         label.textAlignment = .center
         label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
 
     private let creatorNameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 15, weight: .thin)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeThin, weight: .thin)
         label.textAlignment = .center
         label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        addSubview(playlistCoverImageView)
-        addSubview(playlistNameLabel)
-        addSubview(creatorNameLabel)
 
-        clipsToBounds = true
+        contentView.addSubviews(playlistCoverImageView, playlistNameLabel, creatorNameLabel)
+
+        setupConstraints()
     }
 
     @available(*, unavailable)
@@ -52,36 +66,33 @@ class FeaturedPlaylistsCollectionViewCell: UICollectionViewCell {
         fatalError()
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
+    private func setupConstraints() {
+        let imageSize = height - Constants.Values.imageSizeReducer
 
-        creatorNameLabel.frame = CGRect(
-            x: 3,
-            y: contentView.height - 30,
-            width: contentView.width - 6,
-            height: 30
-        )
+        NSLayoutConstraint.activate([
+            playlistCoverImageView.topAnchor.constraint(equalTo: contentView.topAnchor, constant: Constants.Values.paddingDefault),
+            playlistCoverImageView.centerXAnchor.constraint(equalTo: contentView.centerXAnchor),
+            playlistCoverImageView.widthAnchor.constraint(equalToConstant: imageSize),
+            playlistCoverImageView.heightAnchor.constraint(equalToConstant: imageSize),
 
-        playlistNameLabel.frame = CGRect(
-            x: 3,
-            y: contentView.height - 60,
-            width: contentView.width - 6,
-            height: 30
-        )
+            playlistNameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.Values.paddingDefault),
+            playlistNameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.Values.paddingDefault),
+            playlistNameLabel.bottomAnchor.constraint(equalTo: creatorNameLabel.topAnchor, constant: -Constants.Values.paddingPlaylistNameLabelBottomDefault),
+            playlistNameLabel.heightAnchor.constraint(equalToConstant: Constants.Values.paddingHeightDefault),
 
-        let imageSize = contentView.height - 70
-        playlistCoverImageView.frame = CGRect(
-            x: (contentView.width - imageSize) / 2,
-            y: 3,
-            width: imageSize,
-            height: imageSize
-        )
+            creatorNameLabel.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.Values.paddingDefault),
+            creatorNameLabel.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.Values.paddingDefault),
+            creatorNameLabel.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: -Constants.Values.paddingDefault),
+            creatorNameLabel.heightAnchor.constraint(equalToConstant: Constants.Values.paddingHeightDefault),
+        ])
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
+
         playlistNameLabel.text = nil
         creatorNameLabel.text = nil
+        playlistCoverImageView.sd_cancelCurrentImageLoad()
         playlistCoverImageView.image = nil
     }
 

@@ -11,9 +11,19 @@ import UIKit
 class SearchResultDefaultTableViewCell: UITableViewCell {
     static let identifier = "SearchResultDefaultTableViewCell"
 
+    enum Constants {
+        enum Values {
+            static let paddingDefault: CGFloat = 10
+            static let imageSizeDefault: CGFloat = 40
+        }
+    }
+
+    // MARK: - Subviews
+
     private let label: UILabel = {
         let label = UILabel()
         label.numberOfLines = 1
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
@@ -21,41 +31,58 @@ class SearchResultDefaultTableViewCell: UITableViewCell {
     private let iconImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
+        imageView.layer.masksToBounds = true
+        imageView.translatesAutoresizingMaskIntoConstraints = false
 
         return imageView
     }()
 
+    // MARK: - Initializer
+
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
-        addSubview(label)
-        addSubview(iconImageView)
-        clipsToBounds = true
+
+        contentView.addSubviews(label, iconImageView)
         accessoryType = .disclosureIndicator
+        clipsToBounds = true
+
+        setupConstraints()
     }
 
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
-        fatalError()
+        fatalError("init(coder:) has not been implemented")
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
+    // MARK: - Layout
 
-        let imageSize: CGFloat = height - 10
-        iconImageView.frame = CGRect(x: 10, y: 5, width: imageSize, height: imageSize)
-        iconImageView.layer.cornerRadius = imageSize / 2
-        iconImageView.layer.masksToBounds = true
-        label.frame = CGRect(x: iconImageView.right + 10, y: 0, width: width - iconImageView.right - 15, height: height)
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            iconImageView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: Constants.Values.paddingDefault),
+            iconImageView.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+            iconImageView.widthAnchor.constraint(equalToConstant: Constants.Values.imageSizeDefault),
+            iconImageView.heightAnchor.constraint(equalToConstant: Constants.Values.imageSizeDefault),
+
+            label.leadingAnchor.constraint(equalTo: iconImageView.trailingAnchor, constant: Constants.Values.paddingDefault),
+            label.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -Constants.Values.paddingDefault),
+            label.centerYAnchor.constraint(equalTo: contentView.centerYAnchor),
+        ])
+
+        iconImageView.layer.cornerRadius = Constants.Values.imageSizeDefault / 2
     }
 
     override func prepareForReuse() {
         super.prepareForReuse()
+
+        iconImageView.sd_cancelCurrentImageLoad()
         iconImageView.image = nil
         label.text = nil
     }
 
+    // MARK: - Configuration
+
     func configure(with viewModel: SearchResultDefaultTableViewCellViewModel) {
         label.text = viewModel.title
-        iconImageView.sd_setImage(with: viewModel.imageURL)
+        iconImageView.sd_setImage(with: viewModel.imageURL, placeholderImage: UIImage(systemName: "photo"))
     }
 }

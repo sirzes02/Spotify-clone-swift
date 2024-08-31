@@ -14,28 +14,43 @@ protocol PlaylistHeaderCollectionReusableViewDelegate: AnyObject {
 final class PlaylistHeaderCollectionReusableView: UICollectionReusableView {
     static let identifier = "PlaylistHeaderCollectionReusableView"
 
+    enum Constants {
+        enum Values {
+            static let paddingDefault: CGFloat = 10
+            static let paddingHeightDefault: CGFloat = 44
+            static let paddingVerticalDefault: CGFloat = 44
+            static let playAllButtonSizeDefault: CGFloat = 60
+            static let fontSizeSemibold: CGFloat = 22
+            static let fontSizeRegularLight: CGFloat = 18
+            static let imageRadius: CGFloat = 4
+        }
+    }
+
     weak var delegate: PlaylistHeaderCollectionReusableViewDelegate?
 
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 22, weight: .semibold)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeSemibold, weight: .semibold)
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
 
     private let descriptionLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .regular)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeRegularLight, weight: .regular)
         label.textColor = .secondaryLabel
         label.numberOfLines = 0
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
 
     private let ownerLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 18, weight: .light)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeRegularLight, weight: .light)
         label.textColor = .secondaryLabel
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
@@ -44,6 +59,9 @@ final class PlaylistHeaderCollectionReusableView: UICollectionReusableView {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
         imageView.image = UIImage(systemName: "photo")
+        imageView.layer.masksToBounds = true
+        imageView.layer.cornerRadius = Constants.Values.imageRadius
+        imageView.translatesAutoresizingMaskIntoConstraints = false
 
         return imageView
     }()
@@ -57,6 +75,7 @@ final class PlaylistHeaderCollectionReusableView: UICollectionReusableView {
         button.tintColor = .white
         button.layer.cornerRadius = 30
         button.layer.masksToBounds = true
+        button.translatesAutoresizingMaskIntoConstraints = false
 
         return button
     }()
@@ -65,13 +84,13 @@ final class PlaylistHeaderCollectionReusableView: UICollectionReusableView {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+
         backgroundColor = .systemBackground
-        addSubview(imageView)
-        addSubview(ownerLabel)
-        addSubview(descriptionLabel)
-        addSubview(nameLabel)
-        addSubview(playAllButton)
+        addSubviews(imageView, ownerLabel, descriptionLabel, nameLabel, playAllButton)
+
         playAllButton.addTarget(self, action: #selector(didTapPlayAll), for: .touchUpInside)
+
+        setupConstraints()
     }
 
     @available(*, unavailable)
@@ -83,17 +102,43 @@ final class PlaylistHeaderCollectionReusableView: UICollectionReusableView {
         delegate?.playlistHeaderCollectionReusableViewDidTapAll(self)
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            imageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            imageView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.Values.paddingVerticalDefault),
+            imageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 1 / 1.75),
+            imageView.widthAnchor.constraint(equalTo: imageView.heightAnchor),
 
-        let imageSize: CGFloat = height / 1.75
-        imageView.frame = CGRect(x: (width - imageSize) / 2, y: 20, width: imageSize, height: imageSize)
+            nameLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.Values.paddingDefault),
+            nameLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.Values.paddingDefault),
+            nameLabel.topAnchor.constraint(equalTo: imageView.bottomAnchor),
+            nameLabel.heightAnchor.constraint(equalToConstant: Constants.Values.paddingHeightDefault),
 
-        nameLabel.frame = CGRect(x: 10, y: imageView.bottom, width: width - 20, height: 44)
-        descriptionLabel.frame = CGRect(x: 10, y: nameLabel.bottom, width: width - 20, height: 44)
-        ownerLabel.frame = CGRect(x: 10, y: descriptionLabel.bottom, width: width - 20, height: 44)
+            descriptionLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.Values.paddingDefault),
+            descriptionLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.Values.paddingDefault),
+            descriptionLabel.topAnchor.constraint(equalTo: nameLabel.bottomAnchor),
+            descriptionLabel.heightAnchor.constraint(equalToConstant: Constants.Values.paddingHeightDefault),
 
-        playAllButton.frame = CGRect(x: width - 80, y: height - 80, width: 60, height: 60)
+            ownerLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.Values.paddingDefault),
+            ownerLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.Values.paddingDefault),
+            ownerLabel.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor),
+            ownerLabel.heightAnchor.constraint(equalToConstant: Constants.Values.paddingHeightDefault),
+
+            playAllButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.Values.paddingVerticalDefault),
+            playAllButton.bottomAnchor.constraint(equalTo: bottomAnchor),
+            playAllButton.widthAnchor.constraint(equalToConstant: Constants.Values.playAllButtonSizeDefault),
+            playAllButton.heightAnchor.constraint(equalToConstant: Constants.Values.playAllButtonSizeDefault),
+        ])
+    }
+
+    override func prepareForReuse() {
+        super.prepareForReuse()
+
+        imageView.sd_cancelCurrentImageLoad()
+        imageView.image = nil
+        nameLabel.text = nil
+        descriptionLabel.text = nil
+        ownerLabel.text = nil
     }
 
     func configure(with viewModel: PlaylistHeaderViewViewModel) {

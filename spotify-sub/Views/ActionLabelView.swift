@@ -19,18 +19,27 @@ protocol ActionLabelViewDelegate: AnyObject {
 class ActionLabelView: UIView {
     weak var delegate: ActionLabelViewDelegate?
 
+    enum Constants {
+        enum Values {
+            static let paddingLabel: CGFloat = -5
+            static let heightButton: CGFloat = 40
+        }
+    }
+
     private let label: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
         label.numberOfLines = 0
         label.textColor = .secondaryLabel
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
 
-    private let buttton: UIButton = {
+    private let button: UIButton = {
         let button = UIButton()
         button.setTitleColor(.link, for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
 
         return button
     }()
@@ -40,10 +49,11 @@ class ActionLabelView: UIView {
 
         clipsToBounds = true
         isHidden = true
-        addSubview(buttton)
-        addSubview(label)
+        addSubviews(label, button)
 
-        buttton.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
+        button.addTarget(self, action: #selector(didTapButton), for: .touchUpInside)
+
+        setupConstraints()
     }
 
     @available(*, unavailable)
@@ -51,19 +61,26 @@ class ActionLabelView: UIView {
         fatalError()
     }
 
-    @objc func didTapButton() {
+    @objc private func didTapButton() {
         delegate?.actionLabelViewDidTapButton(self)
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            label.leadingAnchor.constraint(equalTo: leadingAnchor),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor),
+            label.topAnchor.constraint(equalTo: topAnchor),
+            label.bottomAnchor.constraint(equalTo: button.topAnchor, constant: -Constants.Values.paddingLabel),
 
-        buttton.frame = CGRect(x: 0, y: height - 40, width: width, height: 40)
-        label.frame = CGRect(x: 0, y: 0, width: width, height: height - 45)
+            button.leadingAnchor.constraint(equalTo: leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: trailingAnchor),
+            button.bottomAnchor.constraint(equalTo: bottomAnchor),
+            button.heightAnchor.constraint(equalToConstant: Constants.Values.heightButton),
+        ])
     }
 
     func configure(with viewModel: ActionLabelViewViewModel) {
         label.text = viewModel.text
-        buttton.setTitle(viewModel.actionTitle, for: .normal)
+        button.setTitle(viewModel.actionTitle, for: .normal)
     }
 }

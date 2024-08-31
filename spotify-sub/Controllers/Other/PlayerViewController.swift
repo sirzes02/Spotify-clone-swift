@@ -97,7 +97,7 @@ extension PlayerViewController: PlayerControlsViewDelegate {
         delegate?.didTapBack()
     }
 
-    func playerControlsView(_playerControlsView _: PlayerControlsView, didSlideSlider value: Float) {
+    func playerControlsView(_: PlayerControlsView, didSlideSlider value: Float) {
         delegate?.didSlideSlider(value)
     }
 }

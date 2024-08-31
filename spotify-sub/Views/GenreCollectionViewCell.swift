@@ -11,6 +11,14 @@ import UIKit
 class CategoryCollectionViewCell: UICollectionViewCell {
     static let identifier = "CategoryCollectionViewCell"
 
+    enum Constants {
+        enum Values {
+            static let paddingDefault: CGFloat = 10
+            static let fontSizeDefault: CGFloat = 22
+            static let imageViewPointSize: CGFloat = 50
+        }
+    }
+
     private let imageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
@@ -18,10 +26,11 @@ class CategoryCollectionViewCell: UICollectionViewCell {
         imageView.image = UIImage(
             systemName: "music.quarternote.3",
             withConfiguration: UIImage.SymbolConfiguration(
-                pointSize: 50,
+                pointSize: Constants.Values.imageViewPointSize,
                 weight: .regular
             )
         )
+        imageView.translatesAutoresizingMaskIntoConstraints = false
 
         return imageView
     }()
@@ -29,7 +38,8 @@ class CategoryCollectionViewCell: UICollectionViewCell {
     private let label: UILabel = {
         let label = UILabel()
         label.textColor = .white
-        label.font = .systemFont(ofSize: 22, weight: .semibold)
+        label.font = .systemFont(ofSize: Constants.Values.fontSizeDefault, weight: .semibold)
+        label.translatesAutoresizingMaskIntoConstraints = false
 
         return label
     }()
@@ -48,11 +58,14 @@ class CategoryCollectionViewCell: UICollectionViewCell {
 
     override init(frame: CGRect) {
         super.init(frame: frame)
+
         layer.cornerRadius = 8
         layer.masksToBounds = true
 
-        addSubview(imageView)
-        addSubview(label)
+        backgroundColor = colors.randomElement()
+        addSubviews(imageView, label)
+
+        setupConstraints()
     }
 
     @available(*, unavailable)
@@ -60,28 +73,36 @@ class CategoryCollectionViewCell: UICollectionViewCell {
         fatalError()
     }
 
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            imageView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            imageView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.Values.paddingDefault),
+            imageView.widthAnchor.constraint(equalTo: widthAnchor, multiplier: 0.5, constant: -Constants.Values.paddingDefault),
+            imageView.heightAnchor.constraint(equalTo: heightAnchor, multiplier: 0.5, constant: -Constants.Values.paddingDefault),
+
+            label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Constants.Values.paddingDefault),
+            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.Values.paddingDefault),
+            label.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.Values.paddingDefault),
+            label.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: Constants.Values.paddingDefault),
+        ])
+    }
+
     override func prepareForReuse() {
         super.prepareForReuse()
+
         label.text = nil
         imageView.image = UIImage(
             systemName: "music.quarternote.3",
             withConfiguration: UIImage.SymbolConfiguration(
-                pointSize: 50,
+                pointSize: Constants.Values.imageViewPointSize,
                 weight: .regular
             )
         )
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-
-        label.frame = CGRect(x: 10, y: height / 2, width: width - 20, height: height / 2)
-        imageView.frame = CGRect(x: width / 2, y: 10, width: width / 2, height: height / 2)
+        backgroundColor = colors.randomElement()
     }
 
     func configure(with viewModel: CategoryCollectionViewCellViewModel) {
         label.text = viewModel.title
         imageView.sd_setImage(with: viewModel.artworkURL)
-        backgroundColor = colors.randomElement()
     }
 }

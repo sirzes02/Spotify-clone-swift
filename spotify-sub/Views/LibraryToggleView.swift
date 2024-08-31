@@ -13,6 +13,16 @@ protocol LibraryToggleViewDelegate: AnyObject {
 }
 
 class LibraryToggleView: UIView {
+    enum Constants {
+        enum Values {
+            static let paddingWidthDefault: CGFloat = 100
+            static let paddingHeightDefault: CGFloat = 40
+            static let indicatorHeight: CGFloat = 3
+            static let indicatorCornerRadius: CGFloat = 4
+            static let animationDuration: CGFloat = 0.2
+        }
+    }
+
     enum State {
         case playlist
         case album
@@ -26,6 +36,7 @@ class LibraryToggleView: UIView {
         let button = UIButton()
         button.setTitleColor(.label, for: .normal)
         button.setTitle("Playlists", for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
 
         return button
     }()
@@ -34,6 +45,7 @@ class LibraryToggleView: UIView {
         let button = UIButton()
         button.setTitleColor(.label, for: .normal)
         button.setTitle("Albums", for: .normal)
+        button.translatesAutoresizingMaskIntoConstraints = false
 
         return button
     }()
@@ -42,19 +54,21 @@ class LibraryToggleView: UIView {
         let view = UIView()
         view.backgroundColor = .systemGreen
         view.layer.masksToBounds = true
-        view.layer.cornerRadius = 4
+        view.layer.cornerRadius = Constants.Values.indicatorCornerRadius
+        view.translatesAutoresizingMaskIntoConstraints = false
 
         return view
     }()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        addSubview(playlistButton)
-        addSubview(albumsButton)
-        addSubview(indicatorView)
 
-        playlistButton.addTarget(self, action: #selector(didTapPlaylists), for: .touchUpInside)
+        addSubviews(playlistButton, albumsButton, indicatorView)
+
         albumsButton.addTarget(self, action: #selector(didTapAlbums), for: .touchUpInside)
+        playlistButton.addTarget(self, action: #selector(didTapPlaylists), for: .touchUpInside)
+
+        setupConstraints()
     }
 
     @available(*, unavailable)
@@ -72,26 +86,40 @@ class LibraryToggleView: UIView {
         delegate?.libraryToggleViewDidTapAlbums(self)
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        playlistButton.frame = CGRect(x: 0, y: 0, width: 100, height: 40)
-        albumsButton.frame = CGRect(x: playlistButton.right, y: 0, width: 100, height: 50)
-        layoutIndicator()
-    }
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            playlistButton.leadingAnchor.constraint(equalTo: leadingAnchor),
+            playlistButton.topAnchor.constraint(equalTo: topAnchor),
+            playlistButton.widthAnchor.constraint(equalToConstant: Constants.Values.paddingWidthDefault),
+            playlistButton.heightAnchor.constraint(equalToConstant: Constants.Values.paddingHeightDefault),
 
-    func layoutIndicator() {
-        switch state {
-        case .playlist:
-            indicatorView.frame = CGRect(x: 0, y: playlistButton.bottom, width: 100, height: 3)
-        case .album:
-            indicatorView.frame = CGRect(x: 100, y: playlistButton.bottom, width: 100, height: 3)
-        }
+            albumsButton.leadingAnchor.constraint(equalTo: playlistButton.trailingAnchor),
+            albumsButton.topAnchor.constraint(equalTo: topAnchor),
+            albumsButton.widthAnchor.constraint(equalToConstant: Constants.Values.paddingWidthDefault),
+            albumsButton.heightAnchor.constraint(equalToConstant: Constants.Values.paddingHeightDefault),
+
+            indicatorView.heightAnchor.constraint(equalToConstant: Constants.Values.indicatorHeight),
+            indicatorView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            indicatorView.widthAnchor.constraint(equalToConstant: Constants.Values.paddingWidthDefault),
+        ])
+
+        update(for: state)
     }
 
     func update(for state: State) {
         self.state = state
-        UIView.animate(withDuration: 0.2) {
-            self.layoutIndicator()
+
+        let targetX: CGFloat
+
+        switch state {
+        case .playlist:
+            targetX = 0
+        case .album:
+            targetX = Constants.Values.paddingWidthDefault
+        }
+
+        UIView.animate(withDuration: Constants.Values.animationDuration) {
+            self.indicatorView.frame.origin.x = targetX
         }
     }
 }

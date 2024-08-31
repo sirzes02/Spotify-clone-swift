@@ -7,10 +7,25 @@
 
 import UIKit
 
-class SettingsViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
-    private let tableView: UITableView = {
+class SettingsViewController: UIViewController {
+    enum Constants {
+        enum Labels {
+            static let title = "Settings"
+            static let profileTitle = "Profile"
+            static let profileDescription = "View Your Profile"
+            static let accountTitle = "Account"
+            static let accountDescription = "Sign Out"
+            static let areSure = "Are you sure?"
+            static let cancel = "Cancel"
+        }
+    }
+
+    private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .grouped)
         tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.delegate = self
+        tableView.dataSource = self
 
         return tableView
     }()
@@ -20,33 +35,40 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        configureModules()
-        title = "Setting"
+        title = Constants.Labels.title
         view.backgroundColor = .systemBackground
+        configureModules()
+
         view.addSubview(tableView)
-        tableView.dataSource = self
-        tableView.delegate = self
+
+        setUpConstraints()
+    }
+
+    private func setUpConstraints() {
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
     }
 
     private func configureModules() {
-        sections.append(Section(title: "Profile", options: [Option(title: "View Your Profile", handler: { [weak self] in
-            DispatchQueue.main.async {
+        sections = [
+            Section(title: Constants.Labels.profileTitle, options: [Option(title: Constants.Labels.profileDescription, handler: { [weak self] in
                 self?.viewProfile()
-            }
-        })]))
-
-        sections.append(Section(title: "Account", options: [Option(title: "Sign Out", handler: { [weak self] in
-            DispatchQueue.main.async {
+            })]),
+            Section(title: Constants.Labels.accountTitle, options: [Option(title: Constants.Labels.accountDescription, handler: { [weak self] in
                 self?.signOutTapped()
-            }
-        })]))
+            })]),
+        ]
     }
 
     private func signOutTapped() {
-        let alert = UIAlertController(title: "Sign Out", message: "Are you sure?", preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        alert.addAction(UIAlertAction(title: "Sign out", style: .destructive) { _ in
-            AuthManager.shared.signOut { [weak self] signedOut in
+        let alert = UIAlertController(title: Constants.Labels.accountDescription, message: Constants.Labels.areSure, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: Constants.Labels.cancel, style: .cancel))
+        alert.addAction(UIAlertAction(title: Constants.Labels.accountDescription, style: .destructive) { [weak self] _ in
+            AuthManager.shared.signOut { signedOut in
                 if signedOut {
                     DispatchQueue.main.async {
                         let navVC = UINavigationController(rootViewController: WelcomeViewController())
@@ -61,24 +83,22 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
                 }
             }
         })
+
         present(alert, animated: true)
     }
 
     private func viewProfile() {
         let vc = ProfileViewController()
-        vc.title = "Profile"
+        vc.title = Constants.Labels.profileTitle
         vc.navigationItem.largeTitleDisplayMode = .never
+
         navigationController?.pushViewController(vc, animated: true)
     }
+}
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
+// MARK: - UITableViewDataSource and UITableViewDelegate
 
-        tableView.frame = view.bounds
-    }
-
-    // MARK: - TableView
-
+extension SettingsViewController: UITableViewDelegate, UITableViewDataSource {
     func numberOfSections(in _: UITableView) -> Int {
         sections.count
     }
@@ -92,7 +112,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath)
         var cellContext = cell.defaultContentConfiguration()
         cellContext.text = model.title
-
         cell.contentConfiguration = cellContext
 
         return cell
@@ -100,13 +119,12 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
-        // Call handler for cell
+
         let model = sections[indexPath.section].options[indexPath.row]
         model.handler()
     }
 
     func tableView(_: UITableView, titleForHeaderInSection section: Int) -> String? {
-        let model = sections[section]
-        return model.title
+        sections[section].title
     }
 }

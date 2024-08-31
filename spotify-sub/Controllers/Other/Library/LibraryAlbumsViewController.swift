@@ -8,32 +8,55 @@
 import UIKit
 
 class LibraryAlbumsViewController: UIViewController {
-    var albums = [Album]()
+    enum Constants {
+        enum Values {
+            static let noAlbumsViewSize: CGFloat = 150
+            static let rowHeightDefault: CGFloat = 70
+        }
 
-    private let noAlbumsView = ActionLabelView()
+        enum Labels {
+            static let noAlbum = "You do not have any album yet."
+            static let browse = "Browse"
+        }
+    }
 
-    private let tableView: UITableView = {
+    private var albums = [Album]()
+    private var observer: NSObjectProtocol?
+
+    private lazy var noAlbumsView: ActionLabelView = {
+        let view = ActionLabelView()
+        view.isHidden = true
+        view.delegate = self
+        view.configure(with: ActionLabelViewViewModel(
+            text: Constants.Labels.noAlbum,
+            actionTitle: Constants.Labels.browse
+        ))
+        view.translatesAutoresizingMaskIntoConstraints = false
+
+        return view
+    }()
+
+    private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .grouped)
         tableView.register(
             SearchResultSubtitleTableViewCell.self,
             forCellReuseIdentifier: SearchResultSubtitleTableViewCell.identifier
         )
         tableView.isHidden = true
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.translatesAutoresizingMaskIntoConstraints = false
 
         return tableView
     }()
 
-    private var observer: NSObjectProtocol?
-
     override func viewDidLoad() {
         super.viewDidLoad()
+
         view.backgroundColor = .systemBackground
+        view.addSubviews(tableView, noAlbumsView)
 
-        tableView.delegate = self
-        tableView.dataSource = self
-        view.addSubview(tableView)
-
-        setUpNoAlbumView()
+        setUpConstraints()
         fetchData()
 
         observer = NotificationCenter.default.addObserver(
@@ -46,26 +69,18 @@ class LibraryAlbumsViewController: UIViewController {
         )
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
+    private func setUpConstraints() {
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-        noAlbumsView.frame = CGRect(
-            x: (view.width - 150) / 2,
-            y: (view.height - 150) / 2,
-            width: 150,
-            height: 150
-        )
-
-        tableView.frame = view.bounds
-    }
-
-    private func setUpNoAlbumView() {
-        view.addSubview(noAlbumsView)
-        noAlbumsView.delegate = self
-        noAlbumsView.configure(with: ActionLabelViewViewModel(
-            text: "you have not saved any album yet.",
-            actionTitle: "Browse"
-        ))
+            noAlbumsView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            noAlbumsView.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            noAlbumsView.widthAnchor.constraint(equalToConstant: Constants.Values.noAlbumsViewSize),
+            noAlbumsView.heightAnchor.constraint(equalToConstant: Constants.Values.noAlbumsViewSize),
+        ])
     }
 
     private func fetchData() {
@@ -88,9 +103,9 @@ class LibraryAlbumsViewController: UIViewController {
             noAlbumsView.isHidden = false
             tableView.isHidden = true
         } else {
-            tableView.reloadData()
             noAlbumsView.isHidden = true
             tableView.isHidden = false
+            tableView.reloadData()
         }
     }
 }
@@ -135,6 +150,6 @@ extension LibraryAlbumsViewController: UITableViewDelegate, UITableViewDataSourc
     }
 
     func tableView(_: UITableView, heightForRowAt _: IndexPath) -> CGFloat {
-        70
+        Constants.Values.rowHeightDefault
     }
 }
