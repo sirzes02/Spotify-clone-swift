@@ -9,6 +9,17 @@ import SDWebImage
 import UIKit
 
 class ProfileViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
+    enum Constants {
+        enum Labels {
+            static let title = "Profile"
+            static let name = "Full name:"
+            static let id = "Email Address:"
+            static let email = "User ID:"
+            static let plan = "Plan:"
+            static let failed = "Failed to load profile"
+        }
+    }
+
     private let tableView: UITableView = {
         let tableView = UITableView()
         tableView.isHidden = true
@@ -21,7 +32,7 @@ class ProfileViewController: UIViewController, UITableViewDataSource, UITableVie
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        title = "Profile"
+        title = Constants.Labels.title
         tableView.delegate = self
         tableView.dataSource = self
         view.addSubview(tableView)
@@ -51,10 +62,12 @@ class ProfileViewController: UIViewController, UITableViewDataSource, UITableVie
     private func updateUI(with model: UserProfile) {
         tableView.isHidden = false
         // Configure Table models
-        models.append("Full name: \(model.display_name)")
-        models.append("Email Address: \(model.email)")
-        models.append("User ID: \(model.id)")
-        models.append("Plan: \(model.product)")
+        models = [
+            "\(Constants.Labels.name) \(model.display_name)",
+            "\(Constants.Labels.email) \(model.email)",
+            "\(Constants.Labels.id) \(model.id)",
+            "\(Constants.Labels.plan) \(model.product)",
+        ]
         createTableHeader(with: model.images.first?.url)
         tableView.reloadData()
     }
@@ -79,7 +92,7 @@ class ProfileViewController: UIViewController, UITableViewDataSource, UITableVie
 
     private func failedToGetProfile() {
         let label = UILabel(frame: .zero)
-        label.text = "Failed to load profile"
+        label.text = Constants.Labels.failed
         label.sizeToFit()
         label.textColor = .secondaryLabel
         view.addSubview(label)

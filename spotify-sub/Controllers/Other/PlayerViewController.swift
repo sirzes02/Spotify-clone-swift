@@ -19,48 +19,68 @@ class PlayerViewController: UIViewController {
     weak var dataSource: PlayerDataSource?
     weak var delegate: PlayerViewControllerDelegate?
 
+    enum Constants {
+        enum Values {
+            static let paddingDefault: CGFloat = 10
+        }
+    }
+
     private let imageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFill
+        imageView.translatesAutoresizingMaskIntoConstraints = false
 
         return imageView
     }()
 
-    private let controlsView = PlayerControlsView()
+    private let controlsView: PlayerControlsView = {
+        let controlsView = PlayerControlsView()
+        controlsView.translatesAutoresizingMaskIntoConstraints = false
+
+        return controlsView
+    }()
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
         view.backgroundColor = .systemBackground
-        view.addSubview(imageView)
-        view.addSubview(controlsView)
         controlsView.delegate = self
 
+        view.addSubview(imageView)
+        view.addSubview(controlsView)
+
+        setUpConstraints()
         configureBarButtons()
         configure()
     }
 
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
+    private func setUpConstraints() {
+        NSLayoutConstraint.activate([
+            imageView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            imageView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            imageView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            imageView.heightAnchor.constraint(equalTo: view.widthAnchor),
 
-        imageView.frame = CGRect(x: 0, y: view.safeAreaInsets.top, width: view.width, height: view.width)
-        controlsView.frame = CGRect(
-            x: 10,
-            y: imageView.bottom + 10,
-            width: view.width - 20,
-            height: view.height - imageView.safeAreaInsets.top - view.safeAreaInsets.bottom - 15
-        )
+            controlsView.topAnchor.constraint(equalTo: imageView.bottomAnchor, constant: Constants.Values.paddingDefault),
+            controlsView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.Values.paddingDefault),
+            controlsView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.Values.paddingDefault),
+            controlsView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -Constants.Values.paddingDefault),
+        ])
     }
 
     private func configure() {
-        imageView.sd_setImage(with: dataSource?.imageURL)
-        controlsView.configure(with: PlayerControlsViewViewModel(title: dataSource?.songName, subtitle: dataSource?.subtitle))
+        if let imageURL = dataSource?.imageURL {
+            imageView.sd_setImage(with: imageURL)
+        }
+        controlsView.configure(with: PlayerControlsViewViewModel(
+            title: dataSource?.songName,
+            subtitle: dataSource?.subtitle
+        ))
     }
 
     private func configureBarButtons() {
         navigationItem.leftBarButtonItem = UIBarButtonItem(
             barButtonSystemItem: .close,
-
             target: self,
             action: #selector(didTapClose)
         )
@@ -75,14 +95,14 @@ class PlayerViewController: UIViewController {
         dismiss(animated: true)
     }
 
-    @objc private func didTapAction() {
-        // actions
-    }
+    @objc private func didTapAction() {}
 
     func refreshUI() {
         configure()
     }
 }
+
+// MARK: - PlayerControlsViewDelegate
 
 extension PlayerViewController: PlayerControlsViewDelegate {
     func playerControlsViewDidTapPlayPauseButton(_: PlayerControlsView) {

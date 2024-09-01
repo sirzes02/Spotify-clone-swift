@@ -1,72 +1,65 @@
-//
-//  PlaylistViewController.swift
-//  spotify-sub
-//
-//  Created by Santiago Varela on 10/08/24.
-//
-
 import UIKit
 
 class PlaylistViewController: UIViewController {
+    enum Constants {
+        enum Values {
+            static let itemVerticalPadding: CGFloat = 1
+            static let itemHorizontalPadding: CGFloat = 2
+            static let groupHeightPadding: CGFloat = 60
+        }
+
+        enum Labels {
+            static let removePlaylist = "Would you like to remove this from the playlist?"
+            static let cancel = "Cancel"
+            static let remove = "Remove"
+        }
+    }
+
     private let playlist: Playlist
     public var isOwner = false
 
-    private let collectionView = UICollectionView(
-        frame: .zero,
-        collectionViewLayout: UICollectionViewCompositionalLayout(
-            sectionProvider: { _, _ -> NSCollectionLayoutSection? in
-                let item = NSCollectionLayoutItem(
-                    layoutSize: NSCollectionLayoutSize(
-                        widthDimension: .fractionalWidth(1.0),
-                        heightDimension: .fractionalHeight(1.0)
-                    ))
-
-                item.contentInsets = NSDirectionalEdgeInsets(top: 1, leading: 2, bottom: 1, trailing: 2)
-
-                let group = NSCollectionLayoutGroup.vertical(
-                    layoutSize: NSCollectionLayoutSize(
-                        widthDimension: .fractionalWidth(1),
-                        heightDimension: .absolute(60)
-                    ),
-                    subitem: item,
-                    count: 1
+    private lazy var collectionView: UICollectionView = {
+        let layout = UICollectionViewCompositionalLayout { _, _ -> NSCollectionLayoutSection? in
+            let item = NSCollectionLayoutItem(
+                layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1.0),
+                    heightDimension: .fractionalHeight(1.0)
                 )
+            )
+            item.contentInsets = NSDirectionalEdgeInsets(
+                top: Constants.Values.itemVerticalPadding,
+                leading: Constants.Values.itemHorizontalPadding,
+                bottom: Constants.Values.itemVerticalPadding,
+                trailing: Constants.Values.itemHorizontalPadding
+            )
 
-                let section = NSCollectionLayoutSection(group: group)
-                section.boundarySupplementaryItems = [
-                    NSCollectionLayoutBoundarySupplementaryItem(
-                        layoutSize: NSCollectionLayoutSize(
-                            widthDimension: .fractionalWidth(1),
-                            heightDimension: .fractionalWidth(1)
-                        ),
-                        elementKind: UICollectionView.elementKindSectionHeader,
-                        alignment: .top
-                    ),
-                ]
+            let group = NSCollectionLayoutGroup.vertical(
+                layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1),
+                    heightDimension: .absolute(Constants.Values.groupHeightPadding)
+                ),
+                repeatingSubitem: item,
+                count: 1
+            )
 
-                return section
-            })
-    )
+            let section = NSCollectionLayoutSection(group: group)
+            let headerItem = NSCollectionLayoutBoundarySupplementaryItem(
+                layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1),
+                    heightDimension: .fractionalWidth(1)
+                ),
+                elementKind: UICollectionView.elementKindSectionHeader,
+                alignment: .top
+            )
+            section.boundarySupplementaryItems = [headerItem]
 
-    init(playlist: Playlist) {
-        self.playlist = playlist
-        super.init(nibName: nil, bundle: nil)
-    }
+            return section
+        }
 
-    @available(*, unavailable)
-    required init?(coder _: NSCoder) {
-        fatalError()
-    }
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.backgroundColor = .systemBackground
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
 
-    private var viewModels = [RecommendedTrackCellViewModel]()
-    private var tracks = [AudioTrack]()
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        title = playlist.name
-        view.backgroundColor = .systemBackground
-
-        view.addSubview(collectionView)
         collectionView.register(
             RecommendedTrackCollectionViewCell.self,
             forCellWithReuseIdentifier: RecommendedTrackCollectionViewCell.identifier
@@ -76,42 +69,86 @@ class PlaylistViewController: UIViewController {
             forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader,
             withReuseIdentifier: PlaylistHeaderCollectionReusableView.identifier
         )
-        collectionView.backgroundColor = .systemBackground
+
         collectionView.delegate = self
         collectionView.dataSource = self
 
-        APICaller.shared.getPlaylistDetails(for: playlist) { result in
-            DispatchQueue.main.sync {
+        return collectionView
+    }()
+
+    private var viewModels = [RecommendedTrackCellViewModel]()
+    private var tracks = [AudioTrack]()
+
+    init(playlist: Playlist) {
+        self.playlist = playlist
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        title = playlist.name
+        view.backgroundColor = .systemBackground
+
+        view.addSubview(collectionView)
+
+        setUpConstraints()
+        fetchPlaylistDetails()
+        configureNavigationBar()
+    }
+
+    private func setUpConstraints() {
+        NSLayoutConstraint.activate([
+            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+    }
+
+    private func configureNavigationBar() {
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .action,
+            target: self,
+            action: #selector(didTapShare)
+        )
+    }
+
+    private func fetchPlaylistDetails() {
+        APICaller.shared.getPlaylistDetails(for: playlist) { [weak self] result in
+            DispatchQueue.main.async {
                 switch result {
                 case let .success(model):
-                    // RecommendedTrackCellViewModel
-                    self.tracks = model.tracks.items.compactMap { $0.track }
-                    self.viewModels = model.tracks.items.compactMap {
+                    self?.tracks = model.tracks.items.compactMap { $0.track }
+                    self?.viewModels = model.tracks.items.compactMap {
                         RecommendedTrackCellViewModel(
                             name: $0.track.name,
                             artistName: $0.track.artists.first?.name ?? "-",
                             artworkURL: URL(string: $0.track.album?.images.first?.url ?? "")
                         )
                     }
-                    self.collectionView.reloadData()
+                    self?.collectionView.reloadData()
                 case let .failure(error):
-                    print(error.localizedDescription)
+                    print("Failed to load playlist details: \(error.localizedDescription)")
                 }
             }
         }
+    }
 
-        navigationItem.rightBarButtonItem = UIBarButtonItem(
-            barButtonSystemItem: .action,
+    @objc private func didTapShare() {
+        guard let url = URL(string: playlist.external_urls["spotify"] ?? "") else {
+            return
+        }
 
-            target: self,
-            action: #selector(didTapShare)
-        )
+        let vc = UIActivityViewController(activityItems: [url], applicationActivities: [])
+        vc.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
 
-        let gesture = UILongPressGestureRecognizer(
-            target: self,
-            action: #selector(didLongPress(_:))
-        )
-        collectionView.addGestureRecognizer(gesture)
+        present(vc, animated: true)
     }
 
     @objc private func didLongPress(_ gesture: UILongPressGestureRecognizer) {
@@ -123,15 +160,15 @@ class PlaylistViewController: UIViewController {
         guard let indexPath = collectionView.indexPathForItem(at: touchPoint) else {
             return
         }
-        let trackToDelete = tracks[indexPath.row]
 
+        let trackToDelete = tracks[indexPath.row]
         let actionSheet = UIAlertController(
             title: trackToDelete.name,
-            message: "Would you like to remove this from the playlist?",
+            message: Constants.Labels.removePlaylist,
             preferredStyle: .actionSheet
         )
-        actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-        actionSheet.addAction(UIAlertAction(title: "Remove", style: .destructive) { [weak self] _ in
+        actionSheet.addAction(UIAlertAction(title: Constants.Labels.cancel, style: .cancel))
+        actionSheet.addAction(UIAlertAction(title: Constants.Labels.remove, style: .destructive) { [weak self] _ in
             guard let strongSelf = self else {
                 return
             }
@@ -151,22 +188,9 @@ class PlaylistViewController: UIViewController {
 
         present(actionSheet, animated: true)
     }
-
-    @objc private func didTapShare() {
-        guard let url = URL(string: playlist.external_urls["spotify"] ?? "") else {
-            return
-        }
-
-        let vc = UIActivityViewController(activityItems: [url], applicationActivities: [])
-        vc.popoverPresentationController?.barButtonItem = navigationItem.rightBarButtonItem
-        present(vc, animated: true)
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        collectionView.frame = view.bounds
-    }
 }
+
+// MARK: - UICollectionViewDelegate and UICollectionViewDataSource
 
 extension PlaylistViewController: UICollectionViewDelegate, UICollectionViewDataSource {
     func numberOfSections(in _: UICollectionView) -> Int {
@@ -215,11 +239,13 @@ extension PlaylistViewController: UICollectionViewDelegate, UICollectionViewData
 
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         collectionView.deselectItem(at: indexPath, animated: true)
-        let index = indexPath.row
-        let track = tracks[index]
+
+        let track = tracks[indexPath.row]
         PlaybackPresenter.shared.startPlayback(from: self, track: track)
     }
 }
+
+// MARK: - PlaylistHeaderCollectionReusableViewDelegate
 
 extension PlaylistViewController: PlaylistHeaderCollectionReusableViewDelegate {
     func playlistHeaderCollectionReusableViewDidTapAll(_: PlaylistHeaderCollectionReusableView) {

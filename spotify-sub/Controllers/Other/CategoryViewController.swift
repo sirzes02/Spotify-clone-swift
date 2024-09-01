@@ -8,31 +8,61 @@
 import UIKit
 
 class CategoryViewController: UIViewController {
-    let category: Category
+    enum Constants {
+        enum Values {
+            static let itemPaddingDefault: CGFloat = 5
+            static let groupHeightPadding: CGFloat = 250
+        }
+    }
 
-    private let collectionView = UICollectionView(
-        frame: .zero,
-        collectionViewLayout: UICollectionViewCompositionalLayout(
-            sectionProvider: { _, _ -> NSCollectionLayoutSection? in
-                let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+    private let category: Category
+    private var playlists = [Playlist]()
+
+    private lazy var collectionView: UICollectionView = {
+        let layout = UICollectionViewCompositionalLayout { _, _ -> NSCollectionLayoutSection? in
+            let item = NSCollectionLayoutItem(
+                layoutSize: NSCollectionLayoutSize(
                     widthDimension: .fractionalWidth(1),
                     heightDimension: .fractionalHeight(1)
-                ))
-                item.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
-
-                let group = NSCollectionLayoutGroup.horizontal(
-                    layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(250)),
-                    subitem: item,
-                    count: 2
                 )
-                group.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
+            )
+            item.contentInsets = NSDirectionalEdgeInsets(
+                top: Constants.Values.itemPaddingDefault,
+                leading: Constants.Values.itemPaddingDefault,
+                bottom: Constants.Values.itemPaddingDefault,
+                trailing: Constants.Values.itemPaddingDefault
+            )
 
-                return NSCollectionLayoutSection(group: group)
-            }
+            let group = NSCollectionLayoutGroup.horizontal(
+                layoutSize: NSCollectionLayoutSize(
+                    widthDimension: .fractionalWidth(1),
+                    heightDimension: .absolute(Constants.Values.groupHeightPadding)
+                ),
+                repeatingSubitem: item,
+                count: 2
+            )
+            group.contentInsets = NSDirectionalEdgeInsets(
+                top: Constants.Values.itemPaddingDefault,
+                leading: Constants.Values.itemPaddingDefault,
+                bottom: Constants.Values.itemPaddingDefault,
+                trailing: Constants.Values.itemPaddingDefault
+            )
+
+            return NSCollectionLayoutSection(group: group)
+        }
+
+        let collectionView = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collectionView.register(
+            FeaturedPlaylistsCollectionViewCell.self,
+            forCellWithReuseIdentifier: FeaturedPlaylistsCollectionViewCell.identifier
         )
-    )
+        collectionView.delegate = self
+        collectionView.dataSource = self
+        collectionView.backgroundColor = .systemBackground
+        collectionView.translatesAutoresizingMaskIntoConstraints = false
 
-    // MARK: - Init
+        return collectionView
+    }()
 
     init(category: Category) {
         self.category = category
@@ -41,27 +71,30 @@ class CategoryViewController: UIViewController {
 
     @available(*, unavailable)
     required init?(coder _: NSCoder) {
-        fatalError()
+        fatalError("init(coder:) has not been implemented")
     }
-
-    private var playlists = [Playlist]()
-
-    // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
         title = category.name
-        view.addSubview(collectionView)
         view.backgroundColor = .systemBackground
-        collectionView.backgroundColor = .systemBackground
-        collectionView.register(
-            FeaturedPlaylistsCollectionViewCell.self,
+        view.addSubview(collectionView)
 
-            forCellWithReuseIdentifier: FeaturedPlaylistsCollectionViewCell.identifier
-        )
-        collectionView.delegate = self
-        collectionView.dataSource = self
+        setupConstraints()
+        fetchData()
+    }
 
+    private func setupConstraints() {
+        NSLayoutConstraint.activate([
+            collectionView.topAnchor.constraint(equalTo: view.topAnchor),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+    }
+
+    private func fetchData() {
         APICaller.shared.getCategoryPlaylist(category: category) { [weak self] result in
             DispatchQueue.main.async {
                 switch result {
@@ -74,12 +107,9 @@ class CategoryViewController: UIViewController {
             }
         }
     }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        collectionView.frame = view.bounds
-    }
 }
+
+// MARK: - UICollectionViewDelegate, UICollectionViewDataSource
 
 extension CategoryViewController: UICollectionViewDelegate, UICollectionViewDataSource {
     func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
@@ -97,7 +127,6 @@ extension CategoryViewController: UICollectionViewDelegate, UICollectionViewData
         let playlist = playlists[indexPath.row]
         cell.configure(with: FeaturedPlaylistCellViewModel(
             name: playlist.name,
-
             artworkURL: URL(string: playlist.images?.first?.url ?? ""),
             creatorName: playlist.owner.display_name
         ))
@@ -109,7 +138,6 @@ extension CategoryViewController: UICollectionViewDelegate, UICollectionViewData
         collectionView.deselectItem(at: indexPath, animated: true)
 
         let vc = PlaylistViewController(playlist: playlists[indexPath.row])
-
         vc.navigationItem.largeTitleDisplayMode = .never
         navigationController?.pushViewController(vc, animated: true)
     }
